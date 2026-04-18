@@ -1,0 +1,1 @@
+<hr><p style="text-align:center;">© 2026 AWS Voting system </p></body></html>
