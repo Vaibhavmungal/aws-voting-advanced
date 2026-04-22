@@ -7,292 +7,11 @@
     <title>VoteSecure – Online Voting System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            background: #0f0620;
-            color: #e2e8f0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* ── Hero ── */
-        .hero {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 70px 20px;
-            background:
-                radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,.65), transparent),
-                radial-gradient(ellipse 60% 50% at 85% 85%,  rgba(245,158,11,.20), transparent),
-                radial-gradient(ellipse 40% 40% at 10% 70%,  rgba(16,185,129,.12), transparent),
-                #0a0118;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* subtle dot-grid overlay */
-        .hero::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-            background-size: 44px 44px;
-            pointer-events: none;
-        }
-
-        /* glowing orb behind heading */
-        .hero::after {
-            content: '';
-            position: absolute;
-            top: 30%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 500px; height: 300px;
-            background: radial-gradient(ellipse, rgba(124,58,237,.25) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(124,58,237,.2);
-            border: 1px solid rgba(124,58,237,.55);
-            color: #c4b5fd;
-            padding: 6px 18px;
-            border-radius: 50px;
-            font-size: .82rem;
-            font-weight: 700;
-            margin-bottom: 28px;
-            letter-spacing: .04em;
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-icon {
-            font-size: 5.5rem;
-            margin-bottom: 20px;
-            animation: float 3s ease-in-out infinite;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(0 0 24px rgba(124,58,237,.6));
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50%       { transform: translateY(-14px); }
-        }
-
-        h1 {
-            font-size: clamp(2.4rem, 7vw, 4.2rem);
-            font-weight: 800;
-            line-height: 1.08;
-            letter-spacing: -.04em;
-            background: linear-gradient(135deg, #f5f3ff 0%, #c4b5fd 45%, #f59e0b 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 18px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-sub {
-            font-size: 1.1rem;
-            color: #9d8ec8;
-            max-width: 520px;
-            line-height: 1.7;
-            margin-bottom: 48px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ── CTA Buttons ── */
-        .cta-group {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 32px;
-            border-radius: 14px;
-            font-size: 1rem;
-            font-weight: 700;
-            text-decoration: none;
-            transition: transform .22s ease, box-shadow .22s ease;
-        }
-        .btn:hover { transform: translateY(-3px); text-decoration: none; }
-
-        .btn-voter {
-            background: linear-gradient(135deg, #7c3aed, #5b21b6);
-            color: #fff;
-            box-shadow: 0 8px 30px rgba(124,58,237,.5);
-        }
-        .btn-voter:hover { box-shadow: 0 14px 42px rgba(124,58,237,.7); }
-
-        .btn-admin {
-            background: linear-gradient(135deg, rgba(245,158,11,.18), rgba(245,158,11,.08));
-            color: #fcd34d;
-            border: 1px solid rgba(245,158,11,.4);
-        }
-        .btn-admin:hover {
-            background: linear-gradient(135deg, rgba(245,158,11,.28), rgba(245,158,11,.15));
-            border-color: rgba(245,158,11,.7);
-            box-shadow: 0 8px 28px rgba(245,158,11,.25);
-        }
-
-        /* ── Feature Cards ── */
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            max-width: 900px;
-            width: 100%;
-            margin-top: 68px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .feature-card {
-            background: rgba(124,58,237,.07);
-            border: 1px solid rgba(124,58,237,.2);
-            border-radius: 16px;
-            padding: 24px 22px;
-            text-align: left;
-            transition: background .22s, border-color .22s, transform .22s;
-        }
-        .feature-card:hover {
-            background: rgba(124,58,237,.14);
-            border-color: rgba(124,58,237,.4);
-            transform: translateY(-3px);
-        }
-
-        .feature-card .fi { font-size: 1.9rem; margin-bottom: 12px; }
-        .feature-card h3 { font-size: .95rem; font-weight: 700; color: #ddd6fe; margin-bottom: 6px; }
-        .feature-card p  { font-size: .82rem; color: #6b7280; line-height: 1.55; }
-
-        /* ── Developer Section ── */
-        .dev-section {
-            background: #080112;
-            padding: 64px 24px;
-            display: flex;
-            justify-content: center;
-            border-top: 1px solid rgba(124,58,237,.15);
-        }
-
-        .dev-card {
-            display: flex;
-            align-items: center;
-            gap: 36px;
-            background: rgba(124,58,237,.07);
-            border: 1px solid rgba(124,58,237,.22);
-            border-radius: 22px;
-            padding: 40px 44px;
-            max-width: 720px;
-            width: 100%;
-            transition: background .22s, border-color .22s;
-        }
-        .dev-card:hover {
-            background: rgba(124,58,237,.12);
-            border-color: rgba(124,58,237,.38);
-        }
-
-        .dev-avatar {
-            font-size: 4.5rem;
-            flex-shrink: 0;
-            background: radial-gradient(circle, rgba(124,58,237,.35) 0%, rgba(124,58,237,.1) 100%);
-            border: 2px solid rgba(124,58,237,.5);
-            width: 108px;
-            height: 108px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: float 3s ease-in-out infinite;
-            box-shadow: 0 0 30px rgba(124,58,237,.3);
-        }
-
-        .dev-label {
-            font-size: .75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .12em;
-            color: #a78bfa;
-        }
-
-        .dev-name {
-            font-size: 2.1rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ddd6fe, #f59e0b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 6px 0 12px;
-            letter-spacing: -.03em;
-        }
-
-        .dev-desc {
-            font-size: .88rem;
-            color: #6b7280;
-            line-height: 1.7;
-            margin-bottom: 18px;
-        }
-
-        .dev-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .tag {
-            background: rgba(124,58,237,.15);
-            border: 1px solid rgba(124,58,237,.35);
-            color: #c4b5fd;
-            padding: 4px 13px;
-            border-radius: 50px;
-            font-size: .75rem;
-            font-weight: 700;
-            letter-spacing: .02em;
-        }
-
-        /* ── Footer ── */
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: .82rem;
-            color: #3b2a6e;
-            border-top: 1px solid rgba(124,58,237,.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            background: #080112;
-        }
-        .footer-dot { color: #2e1065; }
-
-        @media (max-width: 600px) {
-            .dev-card  { flex-direction: column; text-align: center; padding: 30px 22px; }
-            .dev-tags  { justify-content: center; }
-            .dev-avatar{ margin-bottom: 8px; }
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/landing.css">
 </head>
 <body>
 
+<!-- ══════════ HERO SECTION ══════════ -->
 <section class="hero">
 
     <div class="hero-badge">🔐 Secure &amp; Transparent Elections</div>
@@ -305,11 +24,13 @@
         schools and organisations. Cast your vote with confidence.
     </p>
 
+    <!-- CTA Buttons -->
     <div class="cta-group">
         <a href="voter/login.php" class="btn btn-voter">🧑‍🎓 Voter Login</a>
         <a href="admin/login.php" class="btn btn-admin">🔐 Admin Panel</a>
     </div>
 
+    <!-- Feature Cards -->
     <div class="features">
         <div class="feature-card">
             <div class="fi">🔒</div>
@@ -335,7 +56,7 @@
 
 </section>
 
-<!-- ── Developer Section ── -->
+<!-- ══════════ DEVELOPER SECTION ══════════ -->
 <section class="dev-section">
     <div class="dev-card">
         <div class="dev-avatar">👨‍💻</div>
@@ -356,7 +77,8 @@
     </div>
 </section>
 
-<footer>
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="landing-footer">
     <span>© <?php echo date('Y'); ?> VoteSecure</span>
     <span class="footer-dot">·</span>
     <span>Designed &amp; Developed by <strong style="color:#a78bfa;">Vaibhav</strong></span>

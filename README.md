@@ -120,4 +120,13 @@ aws-voting-advanced/
 4. **File Upload Security:** Candidate image uploads are verified by extension and MIME type before being saved to the `/uploads/` directory.
 
 ---
-*Designed & Developed for a secure, modern voting experience.*
+
+## 🙌 Credits
+
+**Designed & Developed by [Vaibhav Mungal](https://github.com/Vaibhavmungal)**
+
+🤖 *Code architecture, security hardening, UI design system, Chart.js integration, and documentation were pair-programmed with [Antigravity AI](https://deepmind.google/) — an advanced agentic coding assistant by Google DeepMind.*
+
+---
+
+> *Built with ❤️, PHP, and a lot of CSS variables.*
