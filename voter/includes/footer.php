@@ -1,7 +1,24 @@
 </main>
 
-<footer style="text-align:center; padding:22px 16px; font-size:.82rem; color:#9d8ec8; border-top:1px solid #e0d9f7; margin-top:40px; background:#faf8ff;">
-    © <?php echo date('Y'); ?> VoteSecure · Designed &amp; Developed by <strong style="color:#7c3aed;">Vaibhav</strong>
+<!-- ── VOTER FOOTER BAR ───────────────────────────────────────────── -->
+<footer class="voter-footer">
+    <div class="voter-footer__inner">
+
+        <div class="voter-footer__brand">
+            <span class="vf-icon">🗳️</span>
+            <div>
+                <span class="vf-name">VoteSecure</span>
+                <span class="vf-tagline">Your vote. Your voice.</span>
+            </div>
+        </div>
+
+        <div class="voter-footer__copy">
+            © <?php echo date('Y'); ?> VoteSecure &nbsp;·&nbsp;
+            Designed &amp; Developed by <strong>Vaibhav</strong>
+            &nbsp;·&nbsp; v2.0.0
+        </div>
+
+    </div>
 </footer>
 
 </body>

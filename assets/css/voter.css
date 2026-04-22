@@ -463,4 +463,105 @@ a:hover { text-decoration: underline; }
     .navbar       { padding: 0 16px; }
     .elections-grid { grid-template-columns: 1fr; }
     .already-voted-card, .success-card { padding: 32px 22px; }
+    .voter-footer__inner {
+        flex-direction: column;
+        text-align: center;
+        gap: 16px;
+    }
+    .voter-footer__links { justify-content: center; }
+}
+
+/* ══════════ Voter Footer Bar ══════════ */
+.voter-footer {
+    background:
+        linear-gradient(135deg, #1e1040 0%, #2e1065 60%, #4c1d95 100%);
+    border-top: 1px solid rgba(255,255,255,.08);
+    margin-top: auto;
+    padding: 22px 34px;
+}
+
+.voter-footer__inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.voter-footer__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vf-icon { font-size: 1.6rem; }
+
+.vf-name {
+    display: block;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #ddd6fe;
+    letter-spacing: -.2px;
+}
+
+.vf-tagline {
+    display: block;
+    font-size: .72rem;
+    color: #7c6fac;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-top: 2px;
+}
+
+.voter-footer__copy {
+    font-size: .82rem;
+    color: #9d8ec8;
+    text-align: center;
+}
+
+.voter-footer__copy strong {
+    color: #c4b5fd;
+}
+
+.voter-footer__links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.vf-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #9d8ec8;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    text-decoration: none;
+    transition: background .2s, color .2s, border-color .2s;
+}
+
+.vf-link:hover {
+    background: rgba(124,58,237,.35);
+    color: #ddd6fe;
+    border-color: rgba(124,58,237,.5);
+    text-decoration: none;
+}
+
+.vf-link--danger {
+    color: #fca5a5;
+    background: rgba(239,68,68,.1);
+    border-color: rgba(239,68,68,.2);
+}
+
+.vf-link--danger:hover {
+    background: #ef4444;
+    color: #fff;
+    border-color: #ef4444;
 }
