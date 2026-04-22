@@ -1,6 +1,6 @@
 # 🗳️ VoteSecure — Advanced Online Voting System
 
-VoteSecure is a modern, secure, and responsive PHP-based online voting platform. It is split into two distinct panels: an **Admin Panel** for election management and a **Voter Panel** for secure ballot casting.
+VandoteSecure is a modern, secure,  responsive PHP-based online voting platform. It is split into two distinct panels: an **Admin Panel** for election management and a **Voter Panel** for secure ballot casting.
 
 ---
 
