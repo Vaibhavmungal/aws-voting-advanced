@@ -97,7 +97,9 @@ $elections = $conn->query("SELECT * FROM elections ORDER BY id DESC")->fetch_all
         </div>
         <?php if (!empty($winner['image'])): ?>
         <img src="../uploads/<?php echo htmlspecialchars($winner['image']); ?>"
-             alt="" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #f59e0b;margin-left:auto;">
+             alt="" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #f59e0b;margin-left:auto;"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="width:58px;height:58px;border-radius:50%;background:#fde68a;display:none;align-items:center;justify-content:center;font-size:1.6rem;margin-left:auto;border:3px solid #f59e0b;">👤</div>
         <?php else: ?>
         <div style="width:58px;height:58px;border-radius:50%;background:#fde68a;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-left:auto;border:3px solid #f59e0b;">👤</div>
         <?php endif; ?>
@@ -141,7 +143,9 @@ $elections = $conn->query("SELECT * FROM elections ORDER BY id DESC")->fetch_all
                     <div style="display:flex;align-items:center;gap:10px;">
                         <?php if (!empty($row['image'])): ?>
                             <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>"
-                                 alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                                 alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:none;align-items:center;justify-content:center;font-size:.9rem;">👤</div>
                         <?php else: ?>
                             <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:.9rem;">👤</div>
                         <?php endif; ?>

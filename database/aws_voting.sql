@@ -253,7 +253,21 @@ ALTER TABLE `users`
 --
 ALTER TABLE `votes`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_vote` (`user_id`,`election_id`);
+  ADD UNIQUE KEY `unique_vote` (`user_id`,`election_id`),
+  ADD KEY `idx_votes_election_id` (`election_id`),
+  ADD KEY `idx_votes_candidate_id` (`candidate_id`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD KEY `idx_users_has_voted` (`has_voted`);
+
+--
+-- Indexes for table `elections`
+--
+ALTER TABLE `elections`
+  ADD KEY `idx_elections_status` (`status`);
 
 --
 -- AUTO_INCREMENT for dumped tables

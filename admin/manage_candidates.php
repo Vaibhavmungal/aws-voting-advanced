@@ -186,7 +186,9 @@ $msg = $_GET['msg'] ?? '';
                     <td>
                         <?php if(!empty($row['image'])): ?>
                             <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>"
-                                 alt="<?php echo htmlspecialchars($row['name']); ?>">
+                                 alt="<?php echo htmlspecialchars($row['name']); ?>"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div style="width:40px;height:40px;border-radius:50%;background:#e0e7ff;display:none;align-items:center;justify-content:center;">👤</div>
                         <?php else: ?>
                             <div style="width:40px;height:40px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;">👤</div>
                         <?php endif; ?>

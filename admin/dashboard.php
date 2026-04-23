@@ -59,7 +59,7 @@ $chart_votes_json     = json_encode(array_reverse($chart_votes));
     <div class="stat-card">
         <div class="stat-icon">✅</div>
         <div class="stat-num"><?php echo $voted_count; ?></div>
-        <div class="stat-label">Votes Cast</div>
+        <div class="stat-label">Voters Participated</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">👤</div>
@@ -69,7 +69,7 @@ $chart_votes_json     = json_encode(array_reverse($chart_votes));
     <div class="stat-card">
         <div class="stat-icon">📊</div>
         <div class="stat-num"><?php echo $total_votes; ?></div>
-        <div class="stat-label">Total Votes</div>
+        <div class="stat-label">Total Vote Transactions</div>
     </div>
 </div>
 
@@ -151,13 +151,14 @@ $chart_votes_json     = json_encode(array_reverse($chart_votes));
 </div>
 
 <!-- ── CHART.JS ───────────────────────────────────────────────────── -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 <script>
-// ── Shared defaults ───────────────────────────────────────────────
+window.addEventListener('load', function() {
+// ── Shared defaults ─────────────────────────────────────────────
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#94a3b8';
 
-// ── Doughnut: Voter Participation ─────────────────────────────────
+// ── Doughnut: Voter Participation ───────────────────────────────
 const dCtx = document.getElementById('participationChart').getContext('2d');
 new Chart(dCtx, {
     type: 'doughnut',
@@ -177,27 +178,17 @@ new Chart(dCtx, {
         cutout: '72%',
         plugins: {
             legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ` ${ctx.label}: ${ctx.parsed} voters`
-                }
-            }
+            tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} voters` } }
         },
-        animation: {
-            animateRotate: true,
-            duration: 1000,
-            easing: 'easeInOutQuart'
-        }
+        animation: { animateRotate: true, duration: 1000, easing: 'easeInOutQuart' }
     }
 });
 
-// ── Bar: Votes per Election ───────────────────────────────────────
+// ── Bar: Votes per Election ─────────────────────────────────────
 const bCtx = document.getElementById('votesBarChart').getContext('2d');
-
-// Gradient fill
 const gradient = bCtx.createLinearGradient(0, 0, 0, 300);
-gradient.addColorStop(0,   'rgba(108,99,255,0.9)');
-gradient.addColorStop(1,   'rgba(108,99,255,0.15)');
+gradient.addColorStop(0, 'rgba(108,99,255,0.9)');
+gradient.addColorStop(1, 'rgba(108,99,255,0.15)');
 
 new Chart(bCtx, {
     type: 'bar',
@@ -218,29 +209,16 @@ new Chart(bCtx, {
         maintainAspectRatio: false,
         plugins: {
             legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ` ${ctx.parsed.y} votes`
-                }
-            }
+            tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} votes` } }
         },
         scales: {
-            x: {
-                grid: { color: 'rgba(255,255,255,0.05)' },
-                ticks: { maxRotation: 30 }
-            },
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255,255,255,0.05)' },
-                ticks: { precision: 0 }
-            }
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxRotation: 30 } },
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { precision: 0 } }
         },
-        animation: {
-            duration: 1000,
-            easing: 'easeInOutQuart'
-        }
+        animation: { duration: 1000, easing: 'easeInOutQuart' }
     }
 });
+}); // end window.load
 </script>
 
 <?php include("includes/footer.php"); ?>

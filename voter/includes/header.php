@@ -23,8 +23,12 @@ $voter_name = htmlspecialchars($me['name'] ?? 'Voter');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Online Voting System – <?php echo htmlspecialchars($page_title ?? 'Voter Panel'); ?>">
     <title><?php echo htmlspecialchars($page_title ?? 'Voter Panel'); ?> – VoteSecure</title>
+    <!-- Preconnect to reduce Google Fonts latency -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Async font load: non-blocking render -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="../assets/css/voter.css">
 </head>
 <body>

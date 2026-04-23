@@ -1,0 +1,27 @@
+# ── Environment / Secrets ─────────────────────────────────────────
+.env
+.env.local
+.env.production
+
+# ── Uploaded files (user photos – don't commit to git) ────────────
+uploads/*
+!uploads/.gitkeep
+
+# ── IDE / Editor ──────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS Files ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── PHP / Composer ────────────────────────────────────────────────
+vendor/
+composer.lock
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
+error_log
