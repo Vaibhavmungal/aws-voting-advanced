@@ -6,9 +6,8 @@
     <meta name="description" content="VoteSecure – Online Voting System. Secure, fair and transparent elections.">
     <title>VoteSecure – Online Voting System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-    /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -19,11 +18,9 @@
         display: flex;
         flex-direction: column;
     }
+    a { text-decoration: none; color: inherit; }
 
-    a { text-decoration: none; }
-    a:hover { text-decoration: none; }
-
-    /* ── Hero ── */
+    /* ── HERO ── */
     .hero {
         flex: 1;
         display: flex;
@@ -31,13 +28,12 @@
         align-items: center;
         justify-content: center;
         text-align: center;
-        padding: 70px 20px;
+        padding: 80px 24px 60px;
+        min-height: 100vh;
         background: url('assets/images/hero-bg.png') center/cover no-repeat #060012;
         position: relative;
         overflow: hidden;
     }
-
-    /* Dark overlay for text readability */
     .hero::before {
         content: '';
         position: absolute;
@@ -45,22 +41,19 @@
         background: rgba(6, 0, 18, 0.45);
         z-index: 0;
     }
-
-    /* All hero content sits above the overlay */
     .hero > * {
         position: relative;
         z-index: 1;
     }
 
-    /* ── Hero Badge ── */
     .hero-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: rgba(124,58,237,.2);
-        border: 1px solid rgba(124,58,237,.55);
+        background: rgba(124,58,237,.15);
+        border: 1px solid rgba(124,58,237,.45);
         color: #c4b5fd;
-        padding: 6px 18px;
+        padding: 7px 20px;
         border-radius: 50px;
         font-size: .82rem;
         font-weight: 700;
@@ -68,25 +61,23 @@
         letter-spacing: .04em;
     }
 
-    /* ── Hero Icon ── */
     .hero-icon {
         font-size: 5.5rem;
         margin-bottom: 20px;
         animation: float 3s ease-in-out infinite;
-        filter: drop-shadow(0 0 24px rgba(124,58,237,.6));
+        filter: drop-shadow(0 0 28px rgba(124,58,237,.55));
     }
     @keyframes float {
         0%, 100% { transform: translateY(0); }
         50%      { transform: translateY(-14px); }
     }
 
-    /* ── Hero Heading ── */
     .hero h1 {
-        font-size: clamp(2.4rem, 7vw, 4.2rem);
-        font-weight: 800;
+        font-size: clamp(2.6rem, 7vw, 4.4rem);
+        font-weight: 900;
         line-height: 1.08;
         letter-spacing: -.04em;
-        background: linear-gradient(135deg, #f5f3ff 0%, #c4b5fd 45%, #f59e0b 100%);
+        background: linear-gradient(135deg, #fff 0%, #c4b5fd 50%, #f59e0b 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -98,17 +89,16 @@
         color: #9d8ec8;
         max-width: 520px;
         line-height: 1.7;
-        margin-bottom: 48px;
+        margin-bottom: 44px;
     }
 
-    /* ── CTA Buttons ── */
+    /* ── CTA ── */
     .cta-group {
         display: flex;
         gap: 16px;
         flex-wrap: wrap;
         justify-content: center;
     }
-
     .btn {
         display: inline-flex;
         align-items: center;
@@ -117,8 +107,7 @@
         border-radius: 14px;
         font-size: 1rem;
         font-weight: 700;
-        text-decoration: none;
-        transition: transform .22s ease, box-shadow .22s ease;
+        transition: transform .22s, box-shadow .22s;
     }
     .btn:hover { transform: translateY(-3px); }
 
@@ -140,21 +129,21 @@
         box-shadow: 0 8px 28px rgba(245,158,11,.25);
     }
 
-    /* ── Feature Cards ── */
+    /* ── FEATURES ── */
     .features {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         gap: 16px;
         max-width: 900px;
         width: 100%;
-        margin-top: 68px;
+        margin-top: 64px;
     }
 
     .feature-card {
         background: rgba(124,58,237,.07);
         border: 1px solid rgba(124,58,237,.2);
         border-radius: 16px;
-        padding: 24px 22px;
+        padding: 24px 20px;
         text-align: left;
         transition: background .22s, border-color .22s, transform .22s;
     }
@@ -167,7 +156,7 @@
     .feature-card h3  { font-size: .95rem; font-weight: 700; color: #ddd6fe; margin-bottom: 6px; }
     .feature-card p   { font-size: .82rem; color: #6b7280; line-height: 1.55; }
 
-    /* ── Developer Section ── */
+    /* ── DEVELOPER ── */
     .dev-section {
         background: #080112;
         padding: 64px 24px;
@@ -175,7 +164,6 @@
         justify-content: center;
         border-top: 1px solid rgba(124,58,237,.15);
     }
-
     .dev-card {
         display: flex;
         align-items: center;
@@ -195,8 +183,7 @@
         flex-shrink: 0;
         background: radial-gradient(circle, rgba(124,58,237,.35), rgba(124,58,237,.1));
         border: 2px solid rgba(124,58,237,.5);
-        width: 108px;
-        height: 108px;
+        width: 108px; height: 108px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -204,9 +191,7 @@
         animation: float 3s ease-in-out infinite;
         box-shadow: 0 0 30px rgba(124,58,237,.3);
     }
-
     .dev-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #a78bfa; }
-
     .dev-name {
         font-size: 2.1rem;
         font-weight: 800;
@@ -217,10 +202,8 @@
         margin: 6px 0 12px;
         letter-spacing: -.03em;
     }
-
     .dev-desc { font-size: .88rem; color: #6b7280; line-height: 1.7; margin-bottom: 18px; }
     .dev-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-
     .tag {
         background: rgba(124,58,237,.15);
         border: 1px solid rgba(124,58,237,.35);
@@ -229,10 +212,9 @@
         border-radius: 50px;
         font-size: .75rem;
         font-weight: 700;
-        letter-spacing: .02em;
     }
 
-    /* ── Footer ── */
+    /* ── FOOTER ── */
     .landing-footer {
         text-align: center;
         padding: 20px;
@@ -247,36 +229,35 @@
     }
     .footer-dot { color: #2e1065; }
 
-    /* ── Responsive ── */
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+        .features { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 600px) {
-        .dev-card   { flex-direction: column; text-align: center; padding: 30px 22px; }
-        .dev-tags   { justify-content: center; }
+        .features { grid-template-columns: 1fr; }
+        .dev-card { flex-direction: column; text-align: center; padding: 30px 22px; }
+        .dev-tags { justify-content: center; }
         .dev-avatar { margin-bottom: 8px; }
     }
     </style>
 </head>
 <body>
 
-<!-- ══════════ HERO SECTION ══════════ -->
+<!-- ══════════ HERO ══════════ -->
 <section class="hero">
-
     <div class="hero-badge">🔐 Secure &amp; Transparent Elections</div>
-
     <div class="hero-icon">🗳️</div>
-
     <h1>VoteSecure</h1>
     <p class="hero-sub">
         A modern, fair and tamper-proof online voting platform for colleges,
         schools and organisations. Cast your vote with confidence.
     </p>
 
-    <!-- CTA Buttons -->
     <div class="cta-group">
         <a href="voter/login.php" class="btn btn-voter">🧑‍🎓 Voter Login</a>
         <a href="admin/login.php" class="btn btn-admin">🔐 Admin Panel</a>
     </div>
 
-    <!-- Feature Cards -->
     <div class="features">
         <div class="feature-card">
             <div class="fi">🔒</div>
@@ -299,10 +280,9 @@
             <p>Works seamlessly on desktop, tablet and mobile devices.</p>
         </div>
     </div>
-
 </section>
 
-<!-- ══════════ DEVELOPER SECTION ══════════ -->
+<!-- ══════════ DEVELOPER ══════════ -->
 <section class="dev-section">
     <div class="dev-card">
         <div class="dev-avatar">👨‍💻</div>
