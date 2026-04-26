@@ -2,39 +2,6 @@
 
 VoteSecure is a modern, secure, and responsive PHP-based online voting platform built for **colleges, NGOs, and small organisations**. It is split into two distinct panels: an **Admin Panel** for election management and a **Voter Panel** for secure ballot casting.
 
----
-
-## ✨ Features
-
-### 🛡️ Core Security & Architecture
-- **Prepared Statements (MySQLi):** 100% immune to SQL Injection. All user inputs are strictly parameterised.
-- **Bcrypt Password Hashing:** Uses PHP's native `password_hash()` / `password_verify()`. Legacy plain-text passwords are auto-upgraded to bcrypt on first login.
-- **Session Protection:** Strict boundary between Voter and Admin sessions. Redirect guards on every page.
-- **Environment Variables:** Database credentials stored securely in `.env` (excluded via `.gitignore`).
-- **XSS Protection:** `htmlspecialchars()` used universally when outputting user-generated content.
-
-### 🧑‍🎓 Voter Panel (Theme: Royal Purple + Gold)
-- **Registration:** Collects Name, Email, Aadhar/ID Card (12-digit), Mobile (10-digit), and Password. Full duplicate-checking for email and ID card.
-- **Login:** Email + Password (fast, universal — works for colleges, NGOs, small elections).
-- **Identity Verification:** Aadhar/ID Card and Mobile stored securely for admin-side identity verification.
-- **Profile Management:** View registered details (including Aadhar/Mobile), and change password.
-- **Voting Logic:** One vote per election enforced at both DB and UI levels.
-- **Dynamic UI:** Glassmorphism cards, animated elements, show/hide password toggle.
-- **Feedback System:** Voters can submit feedback directly to administrators.
-- **Forgot Password:** Submits a contact request to the admin panel.
-
-### 👨‍💻 Admin Panel (Theme: Dark Sidebar + Clean Content)
-- **Chart.js Dashboard:** Real-time analytics — voter participation doughnut chart, votes-per-election bar chart.
-- **Election Management:** Full CRUD (Create, Edit, Delete, Toggle Active/Inactive) — all in one page (`manage_elections.php`).
-- **Candidate Management:** Full CRUD with image uploads.
-- **Voter Management:** View all voters with Aadhar & Mobile columns, filter by voted/not voted, live search.
-- **Add Voter Manually:** Admin can add voters with optional Aadhar/Mobile. Supports College, Faculty, Staff, NGO Member, General Member types.
-- **Excel Export:** 1-click download of comprehensive election results.
-- **Audit Logs:** Tracks sensitive admin actions (adding voters, toggling elections, etc.).
-- **Reset Requests:** Dedicated panel to handle "Forgot Password" requests from voters.
-- **About Page:** System information and developer credits.
-
----
 
 ## 📂 Project Structure
 
@@ -92,6 +59,39 @@ aws-voting-advanced/
         ├── header.php          # Voter navbar + auth guard
         └── footer.php          # Voter footer
 ```
+---
+
+## ✨ Features
+
+### 🛡️ Core Security & Architecture
+- **Prepared Statements (MySQLi):** 100% immune to SQL Injection. All user inputs are strictly parameterised.
+- **Bcrypt Password Hashing:** Uses PHP's native `password_hash()` / `password_verify()`. Legacy plain-text passwords are auto-upgraded to bcrypt on first login.
+- **Session Protection:** Strict boundary between Voter and Admin sessions. Redirect guards on every page.
+- **Environment Variables:** Database credentials stored securely in `.env` (excluded via `.gitignore`).
+- **XSS Protection:** `htmlspecialchars()` used universally when outputting user-generated content.
+
+### 🧑‍🎓 Voter Panel (Theme: Royal Purple + Gold)
+- **Registration:** Collects Name, Email, Aadhar/ID Card (12-digit), Mobile (10-digit), and Password. Full duplicate-checking for email and ID card.
+- **Login:** Email + Password (fast, universal — works for colleges, NGOs, small elections).
+- **Identity Verification:** Aadhar/ID Card and Mobile stored securely for admin-side identity verification.
+- **Profile Management:** View registered details (including Aadhar/Mobile), and change password.
+- **Voting Logic:** One vote per election enforced at both DB and UI levels.
+- **Dynamic UI:** Glassmorphism cards, animated elements, show/hide password toggle.
+- **Feedback System:** Voters can submit feedback directly to administrators.
+- **Forgot Password:** Submits a contact request to the admin panel.
+
+### 👨‍💻 Admin Panel (Theme: Dark Sidebar + Clean Content)
+- **Chart.js Dashboard:** Real-time analytics — voter participation doughnut chart, votes-per-election bar chart.
+- **Election Management:** Full CRUD (Create, Edit, Delete, Toggle Active/Inactive) — all in one page (`manage_elections.php`).
+- **Candidate Management:** Full CRUD with image uploads.
+- **Voter Management:** View all voters with Aadhar & Mobile columns, filter by voted/not voted, live search.
+- **Add Voter Manually:** Admin can add voters with optional Aadhar/Mobile. Supports College, Faculty, Staff, NGO Member, General Member types.
+- **Excel Export:** 1-click download of comprehensive election results.
+- **Audit Logs:** Tracks sensitive admin actions (adding voters, toggling elections, etc.).
+- **Reset Requests:** Dedicated panel to handle "Forgot Password" requests from voters.
+- **About Page:** System information and developer credits.
+
+---
 
 ---
 
@@ -228,6 +228,5 @@ Email  +  Password  →  Dashboard
 ## 👨‍💻 Developer
 
 **Vaibhav Mungal**
-Full-stack developer | PHP · MySQL · Vanilla CSS
 
 > *Built with ❤️, PHP, MySQL, and a lot of CSS variables. Suitable for college elections, NGO voting, and small organisational polls.*

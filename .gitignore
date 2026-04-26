@@ -1,23 +1,4 @@
-# ─── Environment & Secrets ───────────────────────────────────
 .env
-*.env.local
-*.env.production
-
-# ─── Uploaded Files ──────────────────────────────────────────
-/uploads/*
-!/uploads/.gitkeep
-
-# ─── IDE & Editor ────────────────────────────────────────────
+uploads/*
+!uploads/.gitkeep
 .vscode/
-.idea/
-*.suo
-*.user
-
-# ─── OS Files ────────────────────────────────────────────────
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# ─── Logs & Temp ─────────────────────────────────────────────
-*.log
-/tmp/
