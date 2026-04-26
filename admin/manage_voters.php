@@ -117,6 +117,8 @@ $reset_pending = $conn->query("SELECT COUNT(*) AS c FROM password_reset_requests
                     <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Aadhar / Card No.</th>
+                    <th>Mobile</th>
                     <th>Type</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -124,13 +126,15 @@ $reset_pending = $conn->query("SELECT COUNT(*) AS c FROM password_reset_requests
             </thead>
             <tbody>
             <?php if (empty($voters)): ?>
-                <tr><td colspan="6" style="text-align:center;color:#6b7280;padding:24px;">No voters found.</td></tr>
+                <tr><td colspan="8" style="text-align:center;color:#6b7280;padding:24px;">No voters found.</td></tr>
             <?php else: ?>
             <?php foreach ($voters as $row): ?>
                 <tr>
                     <td><?php echo $row['id']; ?></td>
                     <td><strong><?php echo htmlspecialchars($row['name']); ?></strong></td>
                     <td><?php echo htmlspecialchars($row['email']); ?></td>
+                    <td style="font-family:monospace;font-size:.85rem;"><?php echo $row['election_card'] ? htmlspecialchars($row['election_card']) : '<span style="color:#9ca3af;">—</span>'; ?></td>
+                    <td style="font-family:monospace;font-size:.85rem;"><?php echo $row['mobile'] ? htmlspecialchars($row['mobile']) : '<span style="color:#9ca3af;">—</span>'; ?></td>
                     <td><?php echo htmlspecialchars($row['type'] ?? '—'); ?></td>
                     <td>
                         <?php if ($row['has_voted']): ?>

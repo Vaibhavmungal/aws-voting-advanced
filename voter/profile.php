@@ -54,7 +54,7 @@ if(isset($_POST['update_password'])){
 }
 
 // Fetch user info for display
-$stmt = $conn->prepare("SELECT name, email, type, created_at, has_voted FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT name, email, type, created_at, has_voted, election_card, mobile FROM users WHERE id = ?");
 $stmt->bind_param("i", $uid);
 $stmt->execute();
 $me = $stmt->get_result()->fetch_assoc();
@@ -78,6 +78,20 @@ $stmt->close();
         <div style="margin-bottom: 16px;">
             <label style="font-size:.85rem; font-weight:600; color:var(--text-muted);">Email Address</label>
             <div style="font-size: 1.05rem; font-weight: 500; color:var(--text-main); margin-top: 4px;"><?php echo htmlspecialchars($me['email']); ?></div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="font-size:.85rem; font-weight:600; color:var(--text-muted);">Aadhar / ID Card No.</label>
+            <div style="font-size: 1rem; font-weight: 500; color:var(--text-main); margin-top: 4px; font-family:monospace;">
+                <?php echo $me['election_card'] ? htmlspecialchars($me['election_card']) : '<span style="color:#9ca3af;font-family:inherit;">Not provided</span>'; ?>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="font-size:.85rem; font-weight:600; color:var(--text-muted);">Mobile Number</label>
+            <div style="font-size: 1rem; font-weight: 500; color:var(--text-main); margin-top: 4px; font-family:monospace;">
+                <?php echo $me['mobile'] ? htmlspecialchars($me['mobile']) : '<span style="color:#9ca3af;font-family:inherit;">Not provided</span>'; ?>
+            </div>
         </div>
 
         <div style="margin-bottom: 16px;">

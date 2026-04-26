@@ -1,27 +1,23 @@
-# ── Environment / Secrets ─────────────────────────────────────────
+# ─── Environment & Secrets ───────────────────────────────────
 .env
-.env.local
-.env.production
+*.env.local
+*.env.production
 
-# ── Uploaded files (user photos – don't commit to git) ────────────
-uploads/*
-!uploads/.gitkeep
+# ─── Uploaded Files ──────────────────────────────────────────
+/uploads/*
+!/uploads/.gitkeep
 
-# ── IDE / Editor ──────────────────────────────────────────────────
+# ─── IDE & Editor ────────────────────────────────────────────
 .vscode/
 .idea/
-*.swp
-*.swo
+*.suo
+*.user
 
-# ── OS Files ──────────────────────────────────────────────────────
+# ─── OS Files ────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# ── PHP / Composer ────────────────────────────────────────────────
-vendor/
-composer.lock
-
-# ── Logs ──────────────────────────────────────────────────────────
+# ─── Logs & Temp ─────────────────────────────────────────────
 *.log
-error_log
+/tmp/
