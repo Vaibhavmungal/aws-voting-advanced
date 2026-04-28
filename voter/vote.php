@@ -49,20 +49,32 @@ if(isset($_POST['vote'])){
     } else {
         $candidate_id = (int)$_POST['candidate'];
 
-        // Insert vote (prepared statement)
-        $stmt = $conn->prepare("INSERT INTO votes (user_id, candidate_id, election_id) VALUES (?, ?, ?)");
-        $stmt->bind_param("iii", $uid, $candidate_id, $election_id);
-        $stmt->execute();
-        $stmt->close();
+        // --- Start Transaction for Safety ---
+        $conn->begin_transaction();
 
-        // Update has_voted flag
-        $stmt = $conn->prepare("UPDATE users SET has_voted = 1 WHERE id = ?");
-        $stmt->bind_param("i", $uid);
-        $stmt->execute();
-        $stmt->close();
+        try {
+            // Insert vote
+            $stmt = $conn->prepare("INSERT INTO votes (user_id, candidate_id, election_id) VALUES (?, ?, ?)");
+            $stmt->bind_param("iii", $uid, $candidate_id, $election_id);
+            $stmt->execute();
+            $stmt->close();
 
-        header("Location: vote_success.php?election=$election_id&candidate=$candidate_id");
-        exit();
+            // Update has_voted flag
+            $stmt = $conn->prepare("UPDATE users SET has_voted = 1 WHERE id = ?");
+            $stmt->bind_param("i", $uid);
+            $stmt->execute();
+            $stmt->close();
+
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            $error = "Voting failed due to a system error. Please try again.";
+        }
+
+        if(empty($error)) {
+            header("Location: vote_success.php?election=$election_id&candidate=$candidate_id");
+            exit();
+        }
     }
 }
 
