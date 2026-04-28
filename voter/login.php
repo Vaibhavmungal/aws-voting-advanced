@@ -224,6 +224,14 @@ if(isset($_POST['login'])){
         .auth-bottom p { font-size: .88rem; color: #64748b; margin: 6px 0; }
         .auth-bottom a { color: #7c3aed; font-weight: 600; text-decoration: none; }
         .auth-bottom a:hover { text-decoration: underline; }
+        
+        @media(max-width: 480px) {
+            .auth-card { padding: 36px 20px; }
+            .logo-icon-wrap { width: 60px; height: 60px; font-size: 1.6rem; }
+            .auth-logo h1 { font-size: 1.3rem; }
+            .trust-badges { gap: 6px; }
+            .trust-badge { padding: 3px 10px; font-size: .68rem; }
+        }
     </style>
 </head>
 <body>

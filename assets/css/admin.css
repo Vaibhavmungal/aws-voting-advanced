@@ -769,6 +769,12 @@ table.data-table img {
     text-decoration: none;
 }
 
+@media(max-width: 480px) {
+    .auth-card { padding: 36px 24px; }
+    .auth-logo .logo-icon { font-size: 2.5rem; }
+    .auth-logo h1 { font-size: 1.3rem; }
+}
+
 /* ════════════════════════════════════════
    UTILITY
 ════════════════════════════════════════ */

@@ -162,7 +162,12 @@ if(isset($_POST['register'])){
             grid-template-columns: 1fr 1fr;
             gap: 14px;
         }
-        @media(max-width: 480px){ .form-row { grid-template-columns: 1fr; } }
+        @media(max-width: 480px){ 
+            .form-row { grid-template-columns: 1fr; } 
+            .auth-card { padding: 36px 20px; }
+            .auth-logo .logo-icon { font-size: 2.5rem; }
+            .auth-logo h1 { font-size: 1.3rem; }
+        }
 
         /* ── Security badge ── */
         .security-note {
@@ -217,7 +222,7 @@ if(isset($_POST['register'])){
         <div class="form-row">
             <div class="form-group">
                 <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" placeholder="e.g OM" required
+                <input type="text" id="name" name="name" placeholder="e.g OM Kumar" required
                        value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>">
             </div>
             <div class="form-group">
