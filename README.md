@@ -67,6 +67,7 @@ aws-voting-advanced/
 - **Prepared Statements (MySQLi):** 100% immune to SQL Injection. All user inputs are strictly parameterised.
 - **Bcrypt Password Hashing:** Uses PHP's native `password_hash()` / `password_verify()`. Legacy plain-text passwords are auto-upgraded to bcrypt on first login.
 - **Session Protection:** Strict boundary between Voter and Admin sessions. Redirect guards on every page.
+- **Browser History & Cache Protection:** All authenticated pages and auth forms enforce `Cache-Control: no-store` headers and `pageshow` JS listeners to aggressively defeat the Back-Forward Cache (bfcache), preventing post-logout back-button vulnerabilities.
 - **Environment Variables:** Database credentials stored securely in `.env` (excluded via `.gitignore`).
 - **XSS Protection:** `htmlspecialchars()` used universally when outputting user-generated content.
 
@@ -198,6 +199,7 @@ Email  +  Password  →  Dashboard
 | CSRF — form actions tied to session | ✅ |
 | Password hashing (Bcrypt) | ✅ |
 | Plain-text password auto-upgrade | ✅ |
+| Browser Back-Forward Cache (bfcache) Prevention | ✅ All protected pages |
 | Duplicate email + ID card enforcement | ✅ |
 | Session isolation (voter vs admin) | ✅ |
 | File upload type/MIME validation | ✅ |
@@ -222,6 +224,9 @@ Email  +  Password  →  Dashboard
 | L2 | Unknown email | "No account found" |
 | L3 | Wrong password | "Incorrect password" |
 | L4 | Valid credentials | Redirect to dashboard |
+| N1 | Hit "Back" after Logout | Forced reload → Redirect to Login |
+| N2 | Hit "Back" after Login | Forced reload → Redirect to Dashboard |
+| N3 | Hit "Back" after Voting | Forced reload → Redirect to "Already Voted" |
 
 ---
 

@@ -282,27 +282,6 @@
     </div>
 </section>
 
-<!-- ══════════ DEVELOPER ══════════ -->
-<section class="dev-section">
-    <div class="dev-card">
-        <div class="dev-avatar">👨‍💻</div>
-        <div class="dev-info">
-            <span class="dev-label">Built &amp; Designed by</span>
-            <h2 class="dev-name">Vaibhav</h2>
-            <p class="dev-desc">
-                Full-stack developer passionate about building secure, modern web applications.
-                VoteSecure was crafted with ❤️ using PHP, MySQL &amp; vanilla CSS.
-            </p>
-            <div class="dev-tags">
-                <span class="tag">PHP</span>
-                <span class="tag">MySQL</span>
-                <span class="tag">HTML &amp; CSS</span>
-                <span class="tag">Security</span>
-            </div>
-        </div>
-    </div>
-</section>
-
 <!-- ══════════ FOOTER ══════════ -->
 <footer class="landing-footer">
     <span>© <?php echo date('Y'); ?> VoteSecure</span>
