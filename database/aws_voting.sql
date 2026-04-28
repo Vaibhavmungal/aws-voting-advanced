@@ -139,6 +139,8 @@ CREATE TABLE `users` (
   `name` varchar(100) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
+  `election_card` varchar(20) DEFAULT NULL,
+  `mobile` varchar(15) DEFAULT NULL,
   `has_voted` tinyint(4) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `type` varchar(50) NOT NULL DEFAULT 'College'

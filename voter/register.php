@@ -217,7 +217,7 @@ if(isset($_POST['register'])){
         <div class="form-row">
             <div class="form-group">
                 <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" placeholder="e.g. Sneha " required
+                <input type="text" id="name" name="name" placeholder="e.g OM" required
                        value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>">
             </div>
             <div class="form-group">
