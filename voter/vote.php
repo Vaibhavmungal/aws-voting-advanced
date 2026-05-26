@@ -79,7 +79,7 @@ if(isset($_POST['vote'])){
 }
 
 // --- Get candidates (prepared statement) ---
-$stmt = $conn->prepare("SELECT id, name, position, image FROM candidates WHERE election_id = ?");
+$stmt = $conn->prepare("SELECT id, name, position, image, manifesto FROM candidates WHERE election_id = ?");
 $stmt->bind_param("i", $election_id);
 $stmt->execute();
 $candidates = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -121,6 +121,9 @@ include("includes/header.php");
                         <div class="candidate-info">
                             <strong><?php echo htmlspecialchars($row['name']); ?></strong>
                             <span><?php echo htmlspecialchars($row['position']); ?></span>
+                            <?php if(!empty($row['manifesto'])): ?>
+                                <button type="button" class="btn-manifesto" onclick="openManifesto(event, '<?php echo addslashes(htmlspecialchars($row['name'])); ?>', '<?php echo addslashes(htmlspecialchars($row['position'])); ?>', '<?php echo !empty($row['image']) ? '../uploads/' . addslashes(htmlspecialchars($row['image'])) : ''; ?>', <?php echo htmlspecialchars(json_encode($row['manifesto'])); ?>)">📖 View Manifesto</button>
+                            <?php endif; ?>
                         </div>
                         <div class="candidate-radio"></div>
                     </div>
@@ -134,6 +137,25 @@ include("includes/header.php");
     <?php endif; ?>
 </div>
 
+<!-- ══════════ MANIFESTO MODAL ══════════ -->
+<div class="manifesto-modal-overlay" id="manifestoModal" onclick="closeManifesto(event)">
+    <div class="manifesto-modal-card" onclick="event.stopPropagation()">
+        <span class="manifesto-modal-close" onclick="closeManifesto(event)">✕</span>
+        <div class="modal-cand-header">
+            <img id="modalCandImg" src="" alt="Candidate Photo" style="display: none;">
+            <div id="modalCandImgPlaceholder" style="width:72px;height:72px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;">👤</div>
+            <div class="modal-cand-meta">
+                <h2 id="modalCandName">Candidate Name</h2>
+                <span id="modalCandPosition">Position</span>
+            </div>
+        </div>
+        <div class="modal-section-title">Manifesto / Agenda</div>
+        <div class="manifesto-text-box" id="modalCandManifesto">
+            Manifesto content goes here...
+        </div>
+    </div>
+</div>
+
 <script>
 // Highlight selected candidate
 document.querySelectorAll('.candidate-item').forEach(function(item){
@@ -142,6 +164,50 @@ document.querySelectorAll('.candidate-item').forEach(function(item){
         this.classList.add('selected');
         this.querySelector('input[type="radio"]').checked = true;
     });
+});
+
+// Manifesto modal open/close functions
+function openManifesto(event, name, position, imgUrl, manifestoText) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation(); // Prevent selecting the candidate card
+    }
+    
+    document.getElementById('modalCandName').textContent = name;
+    document.getElementById('modalCandPosition').textContent = position;
+    
+    const img = document.getElementById('modalCandImg');
+    const placeholder = document.getElementById('modalCandImgPlaceholder');
+    
+    if (imgUrl) {
+        img.src = imgUrl;
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        placeholder.style.display = 'flex';
+    }
+    
+    document.getElementById('modalCandManifesto').textContent = manifestoText;
+    
+    document.getElementById('manifestoModal').classList.add('active');
+    document.body.style.overflow = 'hidden'; // Lock background scrolling
+}
+
+function closeManifesto(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    document.getElementById('manifestoModal').classList.remove('active');
+    document.body.style.overflow = ''; // Unlock background scrolling
+}
+
+// Close modal on ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeManifesto();
+    }
 });
 </script>
 

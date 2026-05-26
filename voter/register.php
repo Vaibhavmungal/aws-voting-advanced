@@ -26,6 +26,8 @@ if(isset($_POST['register'])){
         $error = "All fields are required.";
     } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)){
         $error = "Please enter a valid email address.";
+    } elseif(($domain_check = trim($_ENV['ALLOWED_EMAIL_DOMAIN'] ?? '@college.ac.in')) && strtolower($domain_check) !== 'all' && strtolower($domain_check) !== 'any' && !str_ends_with(strtolower($email), strtolower($domain_check))){
+        $error = "Registration is restricted to official college emails ending in '" . htmlspecialchars($domain_check) . "'";
     } elseif(strlen($password) < 6){
         $error = "Password must be at least 6 characters.";
     } elseif($password !== $confirm_pass){

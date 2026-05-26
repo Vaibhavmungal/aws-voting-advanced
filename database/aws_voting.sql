@@ -52,21 +52,23 @@ CREATE TABLE `candidates` (
   `name` varchar(100) NOT NULL,
   `position` varchar(100) NOT NULL,
   `election_id` int(11) NOT NULL,
-  `image` varchar(255) DEFAULT NULL
+  `image` varchar(255) DEFAULT NULL,
+  `manifesto` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `candidates`
 --
 
-INSERT INTO `candidates` (`id`, `name`, `position`, `election_id`, `image`) VALUES
-(6, 'DIY', 'CR', 13, 'IMG_3957.JPG'),
-(7, 'adii', 'President ', 13, 'FullSizeRender.jpg'),
-(8, 'Akshay Thorat', 'V565+', 13, 'IMG_3987.JPG'),
-(9, 'Rohit Patil', 'President', 13, NULL),
-(10, 'Sakshi Deshmukh', 'Vice President', 13, NULL),
-(11, 'wjdaszkxnaskjl', 'djlcndlzkx', 14, 'Screenshot 2025-02-10 174734.png'),
-(12, 'mncskx,m ', 'dknlzv.x,', 14, 'Screenshot 2025-02-10 182242.png');
+INSERT INTO `candidates` (`id`, `name`, `position`, `election_id`, `image`, `manifesto`) VALUES
+(1, 'Rahul Sharma', 'President', 1, NULL, 'I stand for upgrading campus Wi-Fi infrastructure, extending library reading room hours to 24/7, and initiating a weekly student-grievance roundtable with the principal. Let\'s make campus student-first!'),
+(2, 'Priya Deshmukh', 'President', 1, NULL, 'My vision is a green, clean, and digitized campus. I promise to replace paper noticeboards with modern interactive LED panels, setup solar charging hubs in college lawns, and host monthly inter-collegiate hackathons.'),
+(3, 'Aditya Kulkarni', 'Vice President', 1, NULL, 'I pledge to work towards improving placement preparation bootcamps, securing sponsorships for our annual cultural fest, and upgrading equipment in the engineering laboratories.'),
+(4, 'Sneha Patil', 'Vice President', 1, NULL, 'My focus is on student mental well-being and sports. I will set up a dedicated counseling lounge, introduce inter-departmental sports leagues, and ensure sanitizers & safety equipment are standard across all campuses.'),
+(5, 'Amit Shinde', 'CSE Representative', 2, NULL, 'I stand for computer lab modernization, student-led study groups, and securing extra software licenses for home use. Choose innovation!'),
+(6, 'Neha Kendre', 'CSE Representative', 2, NULL, 'I want to bridge the gap between syllabus and industry. I propose inviting tech startup founders for regular talks, and forming coding clubs for lower semester students.'),
+(7, 'Vikram Malhotra', 'Executive Director', 4, NULL, 'I propose allocating 40% of our budget directly to localized community reforestation projects, introducing quarterly transparent audit reports for all donors, and launching a mobile app to connect our global volunteers.'),
+(8, 'Dr. Anjali Mehta', 'Executive Director', 4, NULL, 'My focus is on global advocacy and partnership expansion. I aim to secure three major international conservation grants, establish green partnerships with Fortune 500 companies, and setup our first urban biodiversity research lab.');
 
 -- --------------------------------------------------------
 
@@ -89,9 +91,10 @@ CREATE TABLE `elections` (
 --
 
 INSERT INTO `elections` (`id`, `title`, `type`, `start_date`, `end_date`, `status`, `winner_id`) VALUES
-(4, 'admin', 'College', '2026-02-17', '2026-02-18', 'Inactive', NULL),
-(13, 'College Election', 'College', '2026-02-19', '2026-02-22', 'Inactive', 0),
-(14, 'dbszcjk', 'College', '2026-03-04', '2026-03-05', 'Active', NULL);
+(1, 'Student Council Elections 2026', 'College', '2026-05-20', '2026-06-05', 'Active', NULL),
+(2, 'Department Representative Polls', 'College', '2026-05-22', '2026-06-02', 'Active', NULL),
+(3, 'College Cultural Committee Selection', 'College', '2026-05-24', '2026-06-10', 'Active', NULL),
+(4, 'GreenEarth NGO Board Selection 2026', 'NGO', '2026-05-24', '2026-06-15', 'Active', NULL);
 
 -- --------------------------------------------------------
 
@@ -111,10 +114,8 @@ CREATE TABLE `feedback` (
 --
 
 INSERT INTO `feedback` (`id`, `user_id`, `message`, `created_at`) VALUES
-(1, 1, 'Very good voting system!', '2026-02-19 12:22:17'),
-(2, 71, 'hasbzxcj kjzx', '2026-02-19 12:35:45'),
-(3, 47, 'xyz\r\n', '2026-02-19 12:37:29'),
-(4, 52, 'zzxzccvx ', '2026-02-19 13:45:38');
+(1, 1, 'The secure Aadhar and mobile validation makes this portal feel highly authentic and secure!', '2026-05-25 12:22:17'),
+(2, 2, 'Very sleek and fast voting interface! Great work on the dark-mode dashboard.', '2026-05-25 12:35:45');
 
 -- --------------------------------------------------------
 
@@ -150,31 +151,10 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `has_voted`, `created_at`, `type`) VALUES
-(3, 'Rohit Patil', 'rohit.patil@college.edu', '123456', 1, '2026-02-17 10:46:08', 'College'),
-(4, 'Sakshi Deshmukh', 'sakshi.deshmukh@college.edu', '123456', 0, '2026-02-17 10:46:08', 'College'),
-(47, 'Rohit Patil', 'rohit01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(48, 'Sakshi Deshmukh', 'sakshi01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(49, 'Amit Shinde', 'amit01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(50, 'Priya Jadhav', 'priya01@college.edu', '123456', 1, '2026-02-17 10:55:09', 'College'),
-(51, 'Omkar Kulkarni', 'omkar01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(52, 'Neha Kendre', 'neha01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(53, 'Rahul Sawant', 'rahul01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(54, 'Vaishnavi Patankar', 'vaishnavi01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(55, 'Akshay Thorat', 'akshay01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(56, 'Komal Raut', 'komal01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(57, 'Nikhil Chavan', 'nikhil01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(58, 'Pooja Ghadge', 'pooja01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(59, 'Sagar Wagh', 'sagar01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(60, 'Shubham Pawar', 'shubham01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(61, 'Sneha More', 'sneha01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(62, 'Tejas Mane', 'tejas01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(63, 'Anjali Gaikwad', 'anjali01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(64, 'Kunal Bhosale', 'kunal01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(65, 'Shruti Kadam', 'shruti01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(66, 'Pratik Mahajan', 'pratik01@college.edu', '123456', 0, '2026-02-17 10:55:09', 'College'),
-(70, 'vaibhav mungal', 'vaihav@college.edu', '1234', 0, '2026-02-19 12:23:26', 'College'),
-(71, 'vaibhav mungal', 'vaibhav@college.edu', '1234', 0, '2026-02-19 12:24:36', 'College');
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `election_card`, `mobile`, `has_voted`, `created_at`, `type`) VALUES
+(1, 'Abhishek Joshi', 'abhishek@college.ac.in', '$2y$10$f3WnF3qf.QJ3PzFfe0082OxzO16Lcr/tG5Q0P0iG9CexxXhDkW7e6', '111122223333', '9876543210', 1, '2026-05-25 12:00:00', 'College'),
+(2, 'Riya Sen', 'riya@college.ac.in', '$2y$10$f3WnF3qf.QJ3PzFfe0082OxzO16Lcr/tG5Q0P0iG9CexxXhDkW7e6', '444455556666', '9812345678', 0, '2026-05-25 12:00:00', 'College'),
+(3, 'Yash Vardhan', 'yash@college.ac.in', '$2y$10$f3WnF3qf.QJ3PzFfe0082OxzO16Lcr/tG5Q0P0iG9CexxXhDkW7e6', '777788889999', '9765432109', 0, '2026-05-25 12:00:00', 'College');
 
 -- --------------------------------------------------------
 
@@ -195,17 +175,7 @@ CREATE TABLE `votes` (
 --
 
 INSERT INTO `votes` (`id`, `user_id`, `candidate_id`, `voted_at`, `election_id`) VALUES
-(1, 1, 2, '2026-02-17 09:24:55', 0),
-(2, 3, 2, '2026-02-17 10:52:57', 0),
-(4, 69, 17, '2026-02-17 11:16:28', 0),
-(6, 50, 17, '2026-02-17 12:13:11', 0),
-(10, 71, 0, '2026-02-19 12:26:08', 13),
-(11, 47, 0, '2026-02-19 13:33:26', 13),
-(12, 48, 0, '2026-02-19 13:35:06', 13),
-(13, 51, 7, '2026-02-19 13:44:21', 13),
-(14, 52, 7, '2026-02-19 13:45:27', 13),
-(15, 53, 10, '2026-02-19 13:56:44', 13),
-(16, 58, 8, '2026-02-19 13:57:20', 13);
+(1, 1, 1, '2026-05-25 12:44:21', 1);
 
 --
 -- Indexes for dumped tables

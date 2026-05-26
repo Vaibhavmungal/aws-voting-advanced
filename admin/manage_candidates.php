@@ -36,8 +36,9 @@ if(isset($_POST['update_candidate'])){
     $id       = (int)$_POST['id'];
     $name     = trim($_POST['name']);
     $position = trim($_POST['position']);
-    $stmt = $conn->prepare("UPDATE candidates SET name=?, position=? WHERE id=?");
-    $stmt->bind_param("ssi", $name, $position, $id);
+    $manifesto = trim($_POST['manifesto'] ?? '');
+    $stmt = $conn->prepare("UPDATE candidates SET name=?, position=?, manifesto=? WHERE id=?");
+    $stmt->bind_param("sssi", $name, $position, $manifesto, $id);
     $stmt->execute();
     $stmt->close();
     
@@ -53,6 +54,7 @@ if(isset($_POST['add_candidate'])){
     $name        = trim($_POST['name']);
     $position    = trim($_POST['position']);
     $election_id = (int)$_POST['election_id'];
+    $manifesto   = trim($_POST['manifesto'] ?? '');
     $image_name  = '';
 
     if(!empty($_FILES['image']['name'])){
@@ -62,9 +64,9 @@ if(isset($_POST['add_candidate'])){
     }
 
     $stmt = $conn->prepare(
-        "INSERT INTO candidates (name, position, election_id, image) VALUES (?,?,?,?)"
+        "INSERT INTO candidates (name, position, election_id, image, manifesto) VALUES (?,?,?,?,?)"
     );
-    $stmt->bind_param("ssis", $name, $position, $election_id, $image_name);
+    $stmt->bind_param("ssiss", $name, $position, $election_id, $image_name, $manifesto);
     $stmt->execute();
     $stmt->close();
     
@@ -126,6 +128,10 @@ $msg = $_GET['msg'] ?? '';
                 <input type="text" id="edit_position" name="position" required
                        value="<?php echo htmlspecialchars($edit_data['position']); ?>">
             </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label for="edit_manifesto">Manifesto / Agenda</label>
+                <textarea id="edit_manifesto" name="manifesto" placeholder="Write candidate's manifesto or agenda here..." style="min-height: 120px;"><?php echo htmlspecialchars($edit_data['manifesto'] ?? ''); ?></textarea>
+            </div>
         </div>
         <button name="update_candidate" class="btn btn-primary">💾 Save Changes</button>
         <a href="manage_candidates.php" class="btn btn-outline" style="margin-left:8px;">Cancel</a>
@@ -153,6 +159,10 @@ $msg = $_GET['msg'] ?? '';
             <div class="form-group">
                 <label for="image">Candidate Photo <small class="text-muted">(optional)</small></label>
                 <input type="file" id="image" name="image" accept="image/*">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label for="manifesto">Manifesto / Agenda</label>
+                <textarea id="manifesto" name="manifesto" placeholder="Write candidate's manifesto or agenda here..." style="min-height: 120px;"></textarea>
             </div>
         </div>
         <button name="add_candidate" class="btn btn-primary">➕ Add Candidate</button>

@@ -29,4 +29,10 @@ if (!$conn) {
     die("❌ Database Connection Failed: " . mysqli_connect_error());
 }
 mysqli_set_charset($conn, 'utf8mb4');
+
+// --- Auto Migration: Ensure candidates table has manifesto column ---
+$check_col = mysqli_query($conn, "SHOW COLUMNS FROM `candidates` LIKE 'manifesto'");
+if ($check_col && mysqli_num_rows($check_col) == 0) {
+    mysqli_query($conn, "ALTER TABLE `candidates` ADD COLUMN `manifesto` TEXT DEFAULT NULL");
+}
 ?>
