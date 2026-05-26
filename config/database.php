@@ -37,8 +37,11 @@ if (!$conn) {
 mysqli_set_charset($conn, 'utf8mb4');
 
 // --- Auto Migration: Ensure candidates table has manifesto column ---
-$check_col = mysqli_query($conn, "SHOW COLUMNS FROM `candidates` LIKE 'manifesto'");
-if ($check_col && mysqli_num_rows($check_col) == 0) {
-    mysqli_query($conn, "ALTER TABLE `candidates` ADD COLUMN `manifesto` TEXT DEFAULT NULL");
+$table_exists = mysqli_query($conn, "SHOW TABLES LIKE 'candidates'");
+if ($table_exists && mysqli_num_rows($table_exists) > 0) {
+    $check_col = mysqli_query($conn, "SHOW COLUMNS FROM `candidates` LIKE 'manifesto'");
+    if ($check_col && mysqli_num_rows($check_col) == 0) {
+        mysqli_query($conn, "ALTER TABLE `candidates` ADD COLUMN `manifesto` TEXT DEFAULT NULL");
+    }
 }
 ?>
