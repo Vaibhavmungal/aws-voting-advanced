@@ -10,9 +10,15 @@ $env_file = dirname(__DIR__) . '/.env';
 if (file_exists($env_file)) {
     $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
-        if (str_starts_with(trim($line), '#')) continue; // skip comments
+        $trimmed_line = trim($line);
+        if (str_starts_with($trimmed_line, '#')) continue; // skip comments
         if (str_contains($line, '=')) {
             [$key, $val] = explode('=', $line, 2);
+            $val = trim($val);
+            // Strip inline comments starting with #
+            if (str_contains($val, '#')) {
+                $val = explode('#', $val, 2)[0];
+            }
             $_ENV[trim($key)] = trim($val);
         }
     }
