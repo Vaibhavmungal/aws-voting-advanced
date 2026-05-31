@@ -90,7 +90,8 @@ if(isset($_POST['login'])){
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
         }
         body::before {
             content: '';

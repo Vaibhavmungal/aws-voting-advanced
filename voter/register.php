@@ -120,7 +120,8 @@ if(isset($_POST['register'])){
             justify-content: center;
             padding: 36px 16px;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
         }
         body::before {
             content: '';

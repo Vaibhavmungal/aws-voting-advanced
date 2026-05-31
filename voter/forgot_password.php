@@ -85,7 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
             padding: 30px 16px;
         }
         body::before {
