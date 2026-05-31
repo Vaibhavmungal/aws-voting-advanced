@@ -858,6 +858,7 @@ table.data-table img {
     }
 }
 
+@media (max-width: 600px) {
     .topbar {
         padding: 14px 20px;
     }
