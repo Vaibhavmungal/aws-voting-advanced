@@ -827,8 +827,8 @@ table.data-table img {
     .sidebar-brand .brand-name,
     .sidebar-brand .brand-sub,
     .nav-section-label,
-    .sidebar-link span,
-    .sidebar-footer span {
+    .sidebar-link span:not(.nav-icon),
+    .sidebar-footer span:last-child {
         display: none;
     }
 
@@ -844,6 +844,19 @@ table.data-table img {
     .page-content {
         padding: 20px 16px;
     }
+}
+
+@media (max-width: 480px) {
+    .admin-badge {
+        display: none;
+    }
+    .topbar {
+        padding: 12px 14px;
+    }
+    .topbar-title {
+        font-size: 0.95rem;
+    }
+}
 
     .topbar {
         padding: 14px 20px;

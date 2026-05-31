@@ -5,7 +5,7 @@ VoteSecure is a modern, secure, and responsive PHP-based online voting platform 
 
 ## 📂 Project Structure
 
-```text
+text
 aws-voting-advanced/
 ├── .env                        # Database credentials (not committed)
 ├── .gitignore                  # Excludes .env, uploads/*, etc.
@@ -69,6 +69,7 @@ aws-voting-advanced/
 - **Session Protection:** Strict boundary between Voter and Admin sessions. Redirect guards on every page.
 - **Environment Variables:** Database credentials stored securely in `.env` (excluded via `.gitignore`).
 - **XSS Protection:** `htmlspecialchars()` used universally when outputting user-generated content.
+- **Mobile Responsive Design:** 100% optimized for smartphone and tablet viewports with responsive column wrapping, collapsible menu systems, and fluid grids.
 
 ### 🧑‍🎓 Voter Panel (Theme: Royal Purple + Gold)
 - **Registration:** Collects Name, Email, Aadhar/ID Card (12-digit), Mobile (10-digit), and Password. Full duplicate-checking for email and ID card.
@@ -186,6 +187,7 @@ Email  +  Password  →  Dashboard
 | **Voter Theme** | Royal Purple (`#7c3aed`) + Gold (`#f59e0b`) on light background |
 | **Admin Theme** | Dark sidebar (`#0f172a`) + white content area |
 | **CSS Files** | `voter.css` (voter portal + landing page merged) · `admin.css` |
+| **Responsiveness**| 100% optimized for mobile & tablet (collapsible sidebar, responsive stacked registration, fluid layout grids) |
 
 ---
 

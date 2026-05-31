@@ -87,7 +87,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             <input type="text" name="password" placeholder="Set a password" required>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="form-grid">
             <div class="form-group">
                 <label>Aadhar / ID Card No. <small style="color:#9ca3af;">(optional, 12 digits)</small></label>
                 <input type="text" name="election_card" placeholder="12-digit number" maxlength="12" inputmode="numeric"

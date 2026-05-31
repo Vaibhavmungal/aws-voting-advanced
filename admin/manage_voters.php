@@ -70,7 +70,7 @@ $reset_pending = $conn->query("SELECT COUNT(*) AS c FROM password_reset_requests
     </div>
 <?php endif; ?>
 
-<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+<div class="stats-grid" style="margin-bottom:24px;">
     <div class="stat-card">
         <div class="stat-icon">👥</div>
         <div class="stat-num"><?php echo $total; ?></div>

@@ -69,7 +69,7 @@ $msg = $_GET['msg'] ?? '';
 <?php endif; ?>
 
 <!-- Stats -->
-<div class="stats-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:24px;">
+<div class="stats-grid" style="margin-bottom:24px;">
     <div class="stat-card">
         <div class="stat-icon">⏳</div>
         <div class="stat-num"><?php echo $pending; ?></div>

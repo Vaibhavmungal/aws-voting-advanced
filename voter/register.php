@@ -175,7 +175,7 @@ if(isset($_POST['register'])){
             grid-template-columns: 1fr 1fr;
             gap: 14px;
         }
-        @media(max-width: 480px){ 
+        @media(max-width: 650px){ 
             .form-row { grid-template-columns: 1fr; } 
             .auth-card { padding: 36px 20px; }
             .auth-logo .logo-icon { font-size: 2.5rem; }
