@@ -2,12 +2,16 @@
 
 VoteSecure is a modern, secure, and responsive PHP-based online voting platform built for **colleges, NGOs, and small organisations**. It is split into two distinct panels: an **Admin Panel** for election management and a **Voter Panel** for secure ballot casting.
 
+> 🌐 **Live Demo:** [http://13.206.147.173/](http://13.206.147.173/)
+
+---
 
 ## 📂 Project Structure
 
-text
+```
 aws-voting-advanced/
 ├── .env                        # Database credentials (not committed)
+├── .env.example                # Sample environment config
 ├── .gitignore                  # Excludes .env, uploads/*, etc.
 ├── README.md                   # This documentation
 ├── index.php                   # Public landing page
@@ -59,6 +63,7 @@ aws-voting-advanced/
         ├── header.php          # Voter navbar + auth guard
         └── footer.php          # Voter footer
 ```
+
 ---
 
 ## ✨ Features
@@ -73,6 +78,7 @@ aws-voting-advanced/
 
 ### 🧑‍🎓 Voter Panel (Theme: Royal Purple + Gold)
 - **Registration:** Collects Name, Email, Aadhar/ID Card (12-digit), Mobile (10-digit), and Password. Full duplicate-checking for email and ID card.
+- **Open Email Registration:** Configurable via `ALLOWED_EMAIL_DOMAIN` in `.env` — set to `all` to accept Gmail/any email, or restrict to a domain (e.g., `@college.ac.in`).
 - **Login:** Email + Password (fast, universal — works for colleges, NGOs, small elections).
 - **Identity Verification:** Aadhar/ID Card and Mobile stored securely for admin-side identity verification.
 - **Profile Management:** View registered details (including Aadhar/Mobile), and change password.
@@ -82,7 +88,8 @@ aws-voting-advanced/
 - **Forgot Password:** Submits a contact request to the admin panel.
 
 ### 👨‍💻 Admin Panel (Theme: Dark Sidebar + Clean Content)
-- **Chart.js Dashboard:** Real-time analytics — voter participation doughnut chart, votes-per-election bar chart.
+- **Chart.js Dashboard:** Real-time analytics — voter participation doughnut chart + votes-per-election bar chart displayed **side by side** in one row.
+- **Stat Cards:** 6 key metrics (Total Elections, Active Elections, Registered Voters, Voters Participated, Candidates, Vote Transactions) displayed in a **single compact row**.
 - **Election Management:** Full CRUD (Create, Edit, Delete, Toggle Active/Inactive) — all in one page (`manage_elections.php`).
 - **Candidate Management:** Full CRUD with image uploads.
 - **Voter Management:** View all voters with Aadhar & Mobile columns, filter by voted/not voted, live search.
@@ -94,9 +101,7 @@ aws-voting-advanced/
 
 ---
 
----
-
-## 🚀 Setup Instructions
+## 🚀 Local Setup (XAMPP/WAMP)
 
 ### 1. Clone the Repository
 ```bash
@@ -108,25 +113,24 @@ cd aws-voting-advanced
 - Create a MySQL database named `aws_voting`.
 - Import the schema:
 ```sql
--- In phpMyAdmin or MySQL CLI:
 SOURCE database/aws_voting.sql;
-```
-- Run the following migration to add identity fields (if upgrading from an older version):
-```sql
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `election_card` VARCHAR(20) DEFAULT NULL;
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `mobile`        VARCHAR(10) DEFAULT NULL;
 ```
 
 ### 3. Environment Configuration
-Create or update `.env` in the project root:
+Create `.env` in the project root (copy from `.env.example`):
 ```env
 DB_HOST=localhost
 DB_USER=root
 DB_PASS=
 DB_NAME=aws_voting
 APP_NAME=VoteSecure
+ALLOWED_EMAIL_DOMAIN=all
 APP_URL=http://localhost/aws-voting-advanced
 ```
+
+> **`ALLOWED_EMAIL_DOMAIN`** options:
+> - `all` → Accept any email (Gmail, Yahoo, etc.)
+> - `@college.ac.in` → Restrict to a specific college domain
 
 ### 4. Web Server
 Place the project folder inside your server's web root:
@@ -142,14 +146,65 @@ Place the project folder inside your server's web root:
 
 ---
 
+## ☁️ AWS EC2 Deployment
+
+### Prerequisites
+- Ubuntu EC2 instance with Apache2, PHP 8+, MySQL running
+- Project files located at `/var/www/html/`
+
+### First-Time Deployment
+```bash
+# Go to web root
+cd /var/www/html
+
+# Initialize git and connect to repo
+git init
+git config --global --add safe.directory /var/www/html
+git remote add origin https://github.com/Vaibhavmungal/aws-voting-advanced.git
+
+# Pull latest code
+git fetch origin main
+git reset --hard origin/main
+
+# Create .env (not stored in git)
+nano /var/www/html/.env
+```
+
+Add this to `.env` on the server:
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=your_mysql_password
+DB_NAME=aws_voting
+APP_NAME=VoteSecure
+ALLOWED_EMAIL_DOMAIN=all
+APP_URL=http://your-ec2-ip
+```
+
+### Fix File Permissions
+```bash
+chown -R www-data:www-data /var/www/html/
+chmod -R 755 /var/www/html/
+chmod -R 777 /var/www/html/uploads/
+```
+
+### Updating the Server (after pushing changes)
+```bash
+cd /var/www/html
+git stash          # save any local-only changes
+git pull origin main
+```
+
+---
+
 ## 🗄️ Database Schema (Key Tables)
 
 | Table | Purpose |
-|-------|---------|
+|-------|---------
 | `users` | Voter accounts — stores name, email, bcrypt password, Aadhar/ID card, mobile, type |
 | `admins` | Admin credentials |
 | `elections` | Election records (title, type, dates, status) |
-| `candidates` | Candidates linked to elections (name, image, election_id) |
+| `candidates` | Candidates linked to elections (name, image, election_id, manifesto) |
 | `votes` | Vote transactions (user_id → candidate_id, election_id) |
 | `feedback` | Voter feedback submissions |
 | `logs` | Admin audit trail |
@@ -187,7 +242,7 @@ Email  +  Password  →  Dashboard
 | **Voter Theme** | Royal Purple (`#7c3aed`) + Gold (`#f59e0b`) on light background |
 | **Admin Theme** | Dark sidebar (`#0f172a`) + white content area |
 | **CSS Files** | `voter.css` (voter portal + landing page merged) · `admin.css` |
-| **Responsiveness**| 100% optimized for mobile & tablet (collapsible sidebar, responsive stacked registration, fluid layout grids) |
+| **Responsiveness** | Fully optimized for mobile & tablet — collapsible icon-only sidebar, stacked auth forms, fluid stat card row, side-by-side charts on desktop |
 
 ---
 
@@ -207,17 +262,32 @@ Email  +  Password  →  Dashboard
 
 ---
 
+## 📱 Mobile Responsiveness
+
+| Page | Fix Applied |
+|------|------------|
+| `voter/register.php` | Replaced `overflow: hidden` → `overflow-x: hidden` + `-webkit-overflow-scrolling: touch` for smooth scroll |
+| `voter/login.php` | Same scroll fix applied |
+| `voter/forgot_password.php` | Same scroll fix applied |
+| Admin sidebar | Fixed selector so icons remain visible (only labels hide on mobile) |
+| Admin stat cards | Reduced `minmax` to `130px` — all 6 cards fit in one row on desktop |
+| Admin charts | Both charts remain side-by-side on desktop, stack only below 600px |
+| Voter navbar | Compact padding on small screens |
+| Ballot candidate cards | Grid layout for very small viewports (< 480px) |
+
+---
+
 ## 🧪 Test Cases (All Passing ✅)
 
 | # | Scenario | Expected |
-|---|---------|---------|
+|---|---------|---------
 | R1 | Empty registration form | "All fields are required" |
 | R2 | Invalid email format | Email validation error |
 | R3 | Aadhar < 12 digits | "Must be exactly 12 digits" |
 | R4 | Mobile < 10 digits | "Must be exactly 10 digits" |
 | R5 | Passwords don't match | Mismatch error |
 | R6 | Password < 6 chars | Length error |
-| R7 | Valid registration | Success → sign-in link |
+| R7 | Valid registration (any email) | Success → sign-in link |
 | R8 | Duplicate email | "Already registered" |
 | R9 | Duplicate Aadhar | "Already registered" |
 | L1 | Empty login | "Fields required" |
@@ -231,4 +301,4 @@ Email  +  Password  →  Dashboard
 
 **Vaibhav Mungal**
 
-> *Built with ❤️, PHP, MySQL, and a lot of CSS variables. Suitable for college elections, NGO voting, and small organisational polls.*
+> *Built with ❤️, PHP, MySQL, and a lot of CSS variables. Deployed on AWS EC2. Suitable for college elections, NGO voting, and small organisational polls.*
