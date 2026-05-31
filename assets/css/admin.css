@@ -260,8 +260,8 @@ a:hover {
 ════════════════════════════════════════ */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 16px;
     margin-bottom: 32px;
 }
 
@@ -269,7 +269,7 @@ a:hover {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: 24px 26px;
+    padding: 20px 18px;
     box-shadow: var(--shadow-sm);
     transition: box-shadow var(--transition), transform var(--transition);
     position: relative;
@@ -293,19 +293,19 @@ a:hover {
 }
 
 .stat-card .stat-icon {
-    font-size: 1.9rem;
-    margin-bottom: 10px;
+    font-size: 1.6rem;
+    margin-bottom: 8px;
 }
 
 .stat-card .stat-num {
-    font-size: 2.1rem;
+    font-size: 1.85rem;
     font-weight: 800;
     color: var(--primary);
     line-height: 1;
 }
 
 .stat-card .stat-label {
-    font-size: .82rem;
+    font-size: .76rem;
     color: var(--text-muted);
     margin-top: 5px;
     font-weight: 500;
