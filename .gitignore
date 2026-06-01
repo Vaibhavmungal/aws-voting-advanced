@@ -4,4 +4,8 @@ uploads/*
 !uploads/default_avatar.png
 !uploads/placeholder_female.png
 !uploads/placeholder_male.png
+!uploads/male_1.png
+!uploads/male_2.png
+!uploads/male_3.png
+!uploads/male_4.png
 .vscode/

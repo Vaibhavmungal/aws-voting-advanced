@@ -67,7 +67,7 @@ aws-voting-advanced/
 ---
 
 ## ✨ Features
-
+                                           
 ### 🛡️ Core Security & Architecture
 - **Prepared Statements (MySQLi):** 100% immune to SQL Injection. All user inputs are strictly parameterised.
 - **Bcrypt Password Hashing:** Uses PHP's native `password_hash()` / `password_verify()`. Legacy plain-text passwords are auto-upgraded to bcrypt on first login.
