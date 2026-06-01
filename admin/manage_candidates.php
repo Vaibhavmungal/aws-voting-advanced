@@ -194,14 +194,13 @@ $msg = $_GET['msg'] ?? '';
             <?php foreach($candidates as $row): ?>
                 <tr>
                     <td>
-                        <?php if(!empty($row['image'])): ?>
-                            <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>"
-                                 alt="<?php echo htmlspecialchars($row['name']); ?>"
-                                 style="width:40px;height:40px;border-radius:50%;object-fit:cover;"
-                                 onerror="this.src='../uploads/default_avatar.png';">
-                        <?php else: ?>
-                            <img src="../uploads/default_avatar.png" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
-                        <?php endif; ?>
+                        <?php
+                        $female_names = ['priya','sneha','neha','riya','pooja','anita','kavita','sunita','divya','sita','geeta','meena','rina','nina','shweta','shruti','sonal','komal','pallavi','nisha','lata','rekha','usha','asha','nita','mita','gita','radha','sujata','savita','smita','namita','mamta','babita','lalita','shobha','shanta','pushpa','kamla','vimla','sudha','uma','poonam','payal','swati','nupur','renu','manju','sangeeta','manisha','madhuri','deepa','deepika','preeti','puja','sarika','sapna','sonia','seema','reema','leena','veena','heena','teena','amita','amrita','ankita','aditi','arti','aarti','archana','alka','alpa','alisha','anjali','ananya','anika','avani','bhavna','bhumi','bindu','chitra','chandni','daisy','deepali','disha','ekta','falguni','ganga','gargi','gayatri','harsha','hema','hina','indira','isha','ishita','jaya','jhanvi','jyoti','kalpana','kamini','kanchan','karuna','khushi','kiran','kriti','krupa','kusum','laxmi','madhu','mahima','mala','manali','mandira','mansi','meeta','megha','minal','mira','mitali','mohini','monika','mukta','nalini','nandini','natasha','nikita','nilima','nimisha','nitu','niyati','nutan','parvati','pavitra','pinky','prachi','pragya','prajakta','pratibha','pratima','priyanshi','priyanka','purvi','radhika','rakhi','rani','rashmi','ratna','raveena','reetika','renuka','riddhi','ridhima','ritu','rohini','roshni','rucha','ruchika','ruhi','rupal','sadhana','sakshi','samiksha','sandhya','sara','saraswati','savitri','sejal','sharmila','shefali','shilpa','shivani','shradha','shreya','shriya','siddhi','simran','sindhu','smriti','sonam','sonali','soni','soumya','sucheta','suchitra','sumati','sumitra','sunanda','suparna','sushmita','suvarna','swapna','tanvi','taruna','tejal','trupti','tulsi','urvashi','vaishali','vandana','varsha','vasudha','vidya','vijaya','vinita','vishakha','vrinda','yamini','yogita','zarina'];
+                        $first_name = strtolower(explode(' ', trim($row['name']))[0]);
+                        $is_female  = in_array($first_name, $female_names);
+                        $photo_src  = !empty($row['image']) ? '../uploads/'.htmlspecialchars($row['image']) : ($is_female ? '../uploads/placeholder_female.png' : '../uploads/placeholder_male.png');
+                        ?>
+                        <img src="<?php echo $photo_src; ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.src='../uploads/default_avatar.png';">
                     </td>
                     <td><strong><?php echo htmlspecialchars($row['name']); ?></strong></td>
                     <td><?php echo htmlspecialchars($row['position']); ?></td>

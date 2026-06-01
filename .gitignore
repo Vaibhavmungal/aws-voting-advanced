@@ -2,4 +2,6 @@
 uploads/*
 !uploads/.gitkeep
 !uploads/default_avatar.png
+!uploads/placeholder_female.png
+!uploads/placeholder_male.png
 .vscode/

@@ -105,6 +105,17 @@ include("includes/header.php");
             <p>No candidates are available for this election yet.</p>
         </div>
     <?php else: ?>
+        <?php
+        $placeholder_photos = [
+            'WhatsApp Image 2025-06-24 at 13.41.10_db285735.jpg',
+            'WhatsApp Image 2025-06-24 at 13.51.18_3d847c84.jpg',
+            'WhatsApp Image 2025-06-24 at 13.52.02_522a76fa.jpg',
+            'WhatsApp Image 2025-06-24 at 13.52.53_525526bf.jpg',
+            'WhatsApp Image 2025-06-24 at 13.53.27_3a279897.jpg',
+            'WhatsApp Image 2025-06-24 at 13.55.10_29ab7c8e.jpg',
+            'joneil.jpg',
+        ];
+        ?>
         <form method="POST" id="voteForm">
             <div class="candidates-list" id="candidatesList">
                 <?php foreach($candidates as $row): ?>
@@ -113,11 +124,17 @@ include("includes/header.php");
                            id="candidate_<?php echo $row['id']; ?>"
                            value="<?php echo $row['id']; ?>">
                     <div class="candidate-inner">
-                        <?php if(!empty($row['image'])): ?>
-                            <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;">
-                        <?php else: ?>
-                            <img src="../uploads/default_avatar.png" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;">
-                        <?php endif; ?>
+        <?php
+        $female_names = ['priya','sneha','neha','riya','pooja','anita','kavita','sunita','divya','sita','geeta','meena','rina','nina','shweta','shruti','sonal','komal','pallavi','nisha','lata','rekha','usha','asha','nita','mita','gita','radha','sujata','savita','smita','namita','mamta','babita','lalita','malati','shobha','shanta','pushpa','kamla','vimla','sudha','uma','asha','poonam','payal','swati','nupur','renu','manju','sangeeta','sangita','manisha','madhuri','deepa','deepika','preeti','preethi','puja','sarika','sapna','sonia','seema','reema','leena','veena','heena','meena','teena','amita','amrita','ankita','aditi','arti','aarti','archana','alka','alpa','alisha','anjali','ananya','anika','avani','bhavna','bhumi','bindu','chitra','chandni','champa','daisy','deepali','disha','ekta','falguni','falak','ganga','gargi','gayatri','harsha','hema','hina','indira','isha','ishita','jagruti','jaya','jayanti','jhanvi','jyoti','jyotsna','kalpana','kamini','kanchan','kanta','karuna','khushi','kiran','kriti','krupa','kusum','laxmi','lekha','leena','lina','madhu','mahima','mala','manali','mandira','mansi','meeta','megha','minal','mira','mitali','mohini','monika','mukta','nalini','nandini','natasha','nikita','nilima','nimisha','nita','nitu','niyati','nutan','parimala','parna','parvati','pavitra','pinky','prachi','pradnya','pragya','prajakta','pranjali','pratibha','pratima','priya','priyanshi','priyanka','purvi','radhika','rajashri','rajeshwari','rakhi','rani','rashmi','ratna','raveena','reetika','renuka','riddhi','ridhima','ritu','rohini','roshni','rucha','ruchika','ruhi','rupal','sadhana','sakshi','samiksha','sandhya','sara','saraswati','savitri','sejal','shakuntala','shampa','sharmila','shefali','shilpa','shimona','shirin','shivani','shobhana','shradha','shreya','shriya','siddhi','simran','sindhu','sita','smriti','sonam','sonali','soni','soumya','sucheta','suchitra','sulochana','sumati','sumitra','sunanda','suparna','suruchi','sushmita','suvarna','swapna','tanvi','taruna','tejal','trupti','tulsi','urvashi','uttara','vaishali','vandana','varsha','vasudha','veni','vidya','vijaya','vimla','vinita','vipula','vishakha','vrinda','yamini','yashodhara','yogita','zarina'];
+        $first_name = strtolower(explode(' ', trim($row['name']))[0]);
+        $is_female  = in_array($first_name, $female_names);
+        if(!empty($row['image'])){
+            $photo_src = '../uploads/' . htmlspecialchars($row['image']);
+        } else {
+            $photo_src = $is_female ? '../uploads/placeholder_female.png' : '../uploads/placeholder_male.png';
+        }
+        ?>
+                        <img src="<?php echo $photo_src; ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.src='../uploads/default_avatar.png';">
                         <div class="candidate-info">
                             <strong><?php echo htmlspecialchars($row['name']); ?></strong>
                             <span><?php echo htmlspecialchars($row['position']); ?></span>
