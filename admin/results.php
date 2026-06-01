@@ -98,10 +98,10 @@ $elections = $conn->query("SELECT * FROM elections ORDER BY id DESC")->fetch_all
         <?php if (!empty($winner['image'])): ?>
         <img src="../uploads/<?php echo htmlspecialchars($winner['image']); ?>"
              alt="" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #f59e0b;margin-left:auto;"
-             onerror="this.src='https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($winner['name']); ?>&backgroundColor=fde68a';">
+             onerror="this.src='../uploads/default_avatar.png';">
         <?php else: ?>
-        <img src="https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($winner['name']); ?>&backgroundColor=fde68a,fef3c7"
-             alt="" style="width:58px;height:58px;border-radius:50%;border:3px solid #f59e0b;margin-left:auto;background:#fde68a;">
+        <img src="../uploads/default_avatar.png"
+             alt="" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #f59e0b;margin-left:auto;">
         <?php endif; ?>
     </div>
     <?php elseif (empty($cands)): ?>
@@ -144,10 +144,10 @@ $elections = $conn->query("SELECT * FROM elections ORDER BY id DESC")->fetch_all
                         <?php if (!empty($row['image'])): ?>
                             <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>"
                                  alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"
-                                 onerror="this.src='https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($row['name']); ?>&backgroundColor=ede9fe';">
+                                 onerror="this.src='../uploads/default_avatar.png';">
                         <?php else: ?>
-                            <img src="https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($row['name']); ?>&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc"
-                                 alt="" style="width:36px;height:36px;border-radius:50%;background:#ede9fe;">
+                            <img src="../uploads/default_avatar.png"
+                                 alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
                         <?php endif; ?>
                         <strong><?php echo htmlspecialchars($row['name']); ?></strong>
                         <?php if ($is_win): ?><span class="winner-label">Winner</span><?php endif; ?>

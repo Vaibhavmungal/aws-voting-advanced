@@ -114,9 +114,9 @@ include("includes/header.php");
                            value="<?php echo $row['id']; ?>">
                     <div class="candidate-inner">
                         <?php if(!empty($row['image'])): ?>
-                            <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
+                            <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                         <?php else: ?>
-                            <img src="https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($row['name']); ?>&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:56px;height:56px;border-radius:50%;flex-shrink:0;background:#e0e7ff;">
+                            <img src="../uploads/default_avatar.png" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                         <?php endif; ?>
                         <div class="candidate-info">
                             <strong><?php echo htmlspecialchars($row['name']); ?></strong>

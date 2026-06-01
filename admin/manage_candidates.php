@@ -198,9 +198,9 @@ $msg = $_GET['msg'] ?? '';
                             <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>"
                                  alt="<?php echo htmlspecialchars($row['name']); ?>"
                                  style="width:40px;height:40px;border-radius:50%;object-fit:cover;"
-                                 onerror="this.src='https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($row['name']); ?>&backgroundColor=b6e3f4,c0aede,d1d4f9';">
+                                 onerror="this.src='../uploads/default_avatar.png';">
                         <?php else: ?>
-                            <img src="https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($row['name']); ?>&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:40px;height:40px;border-radius:50%;background:#e0e7ff;">
+                            <img src="../uploads/default_avatar.png" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
                         <?php endif; ?>
                     </td>
                     <td><strong><?php echo htmlspecialchars($row['name']); ?></strong></td>
