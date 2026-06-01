@@ -116,7 +116,7 @@ include("includes/header.php");
                         <?php if(!empty($row['image'])): ?>
                             <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>">
                         <?php else: ?>
-                            <div style="width:56px;height:56px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">👤</div>
+                            <img src="https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($row['name']); ?>&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf" alt="<?php echo htmlspecialchars($row['name']); ?>" style="width:56px;height:56px;border-radius:50%;flex-shrink:0;background:#e0e7ff;">
                         <?php endif; ?>
                         <div class="candidate-info">
                             <strong><?php echo htmlspecialchars($row['name']); ?></strong>

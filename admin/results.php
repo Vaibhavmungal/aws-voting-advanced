@@ -98,10 +98,10 @@ $elections = $conn->query("SELECT * FROM elections ORDER BY id DESC")->fetch_all
         <?php if (!empty($winner['image'])): ?>
         <img src="../uploads/<?php echo htmlspecialchars($winner['image']); ?>"
              alt="" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #f59e0b;margin-left:auto;"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-        <div style="width:58px;height:58px;border-radius:50%;background:#fde68a;display:none;align-items:center;justify-content:center;font-size:1.6rem;margin-left:auto;border:3px solid #f59e0b;">👤</div>
+             onerror="this.src='https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($winner['name']); ?>&backgroundColor=fde68a';">
         <?php else: ?>
-        <div style="width:58px;height:58px;border-radius:50%;background:#fde68a;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-left:auto;border:3px solid #f59e0b;">👤</div>
+        <img src="https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($winner['name']); ?>&backgroundColor=fde68a,fef3c7"
+             alt="" style="width:58px;height:58px;border-radius:50%;border:3px solid #f59e0b;margin-left:auto;background:#fde68a;">
         <?php endif; ?>
     </div>
     <?php elseif (empty($cands)): ?>
@@ -144,10 +144,10 @@ $elections = $conn->query("SELECT * FROM elections ORDER BY id DESC")->fetch_all
                         <?php if (!empty($row['image'])): ?>
                             <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>"
                                  alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;"
-                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                            <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:none;align-items:center;justify-content:center;font-size:.9rem;">👤</div>
+                                 onerror="this.src='https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($row['name']); ?>&backgroundColor=ede9fe';">
                         <?php else: ?>
-                            <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:.9rem;">👤</div>
+                            <img src="https://api.dicebear.com/7.x/personas/svg?seed=<?php echo urlencode($row['name']); ?>&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc"
+                                 alt="" style="width:36px;height:36px;border-radius:50%;background:#ede9fe;">
                         <?php endif; ?>
                         <strong><?php echo htmlspecialchars($row['name']); ?></strong>
                         <?php if ($is_win): ?><span class="winner-label">Winner</span><?php endif; ?>
