@@ -4,9 +4,10 @@
 [![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-777bb4?logo=php&logoColor=white)](https://www.php.net/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white)](https://www.docker.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479a1?logo=mysql&logoColor=white)](https://www.mysql.com/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Terraform](https://img.shields.io/badge/Terraform-AWS%20IaC-844FBA?logo=terraform&logoColor=white)](terraform/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-326ce5?logo=kubernetes&logoColor=white)](k8s/)
 
-VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online voting platform built for **colleges, universities, NGOs, clubs, and organisations**. It features an **Admin Panel** with real-time analytics for election management and a secure **Voter Panel** for authenticated ballot casting.
+VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online voting platform built for **colleges, universities, NGOs, clubs, and organisations**. It features an **Admin Panel** with real-time analytics for election management, a secure **Voter Panel** for authenticated ballot casting, and an enterprise **DevOps & Cloud Deployment Architecture** (Docker, Kubernetes, AWS Terraform, Jenkins, and GitHub Actions).
 
 > 🌐 **Live Demo:** [http://13.206.147.173/](http://13.206.147.173/)
 
@@ -19,425 +20,412 @@ VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online
 
 ---
 
-## 📂 Project Structure
+## 🚀 Step-by-Step Deployment Guide
 
-```
-aws-voting-advanced/
-├── .env                        # Database credentials (not committed)
-├── .env.example                # Sample environment config
-├── .gitignore                  # Excludes .env, uploads/*, etc.
-├── README.md                   # This documentation
-├── index.php                   # Public landing page
-│
-├── config/
-│   └── database.php            # MySQL connection (reads .env, fallback defaults)
-│
-├── database/
-│   └── aws_voting.sql          # Full schema + seed data
-│
-├── uploads/                    # Candidate profile images (gitignored)
-│
-├── assets/
-│   └── css/
-│       ├── admin.css           # Admin design system (dark sidebar theme)
-│       └── voter.css           # Voter portal + Landing page styles (merged)
-│
-├── admin/                      # ── ADMIN PORTAL ──
-│   ├── login.php               # Admin login
-│   ├── logout.php              # Admin session destroy
-│   ├── dashboard.php           # Analytics overview (Chart.js)
-│   ├── manage_elections.php    # Election CRUD + toggle status
-│   ├── manage_candidates.php   # Candidate CRUD + image upload
-│   ├── manage_voters.php       # Voter list (with Aadhar/Mobile), filters, search
-│   ├── add_voter.php           # Manual voter registration
-│   ├── results.php             # Live vote counting + winner highlights
-│   ├── export_results.php      # Excel results download
-│   ├── export.php              # Voter list Excel export
-│   ├── feedback.php            # Voter feedback inbox
-│   ├── reset_requests.php      # Password reset request management
-│   ├── logs.php                # Admin audit trail
-│   ├── about.php               # System info & developer credits
-│   └── includes/
-│       ├── header.php          # Admin sidebar + topbar
-│       └── footer.php          # Admin footer
-│
-└── voter/                      # ── VOTER PORTAL ──
-    ├── login.php               # Voter login (Email + Password)
-    ├── logout.php              # Voter session destroy
-    ├── register.php            # Registration (Name/Email/Aadhar/Mobile/Password)
-    ├── forgot_password.php     # Password reset request form
-    ├── dashboard.php           # Active elections list
-    ├── vote.php                # Voting ballot interface
-    ├── vote_success.php        # Post-vote confirmation screen
-    ├── already_voted.php       # Guard page for completed votes
-    ├── profile.php             # Account details + password change
-    ├── feedback.php            # Feedback submission
-    └── includes/
-        ├── header.php          # Voter navbar + auth guard
-        └── footer.php          # Voter footer
-```
+Choose your preferred deployment method below:
+
+| Method | Best For | Estimated Time | Complexity |
+|---|---|---|---|
+| [**1. Docker Compose**](#1--docker-compose-deployment-recommended) | Local testing, single-server production (EC2 / VPS) | 2 minutes | ⭐ Easy |
+| [**2. AWS Terraform IaC**](#2-🏗️-aws-cloud-deployment-via-terraform) | High-availability cloud infrastructure (VPC, Bastion, RDS, EC2) | 10 minutes | ⭐⭐⭐ Advanced |
+| [**3. Kubernetes Pods**](#3-☸️-kubernetes-k8s-pod-deployment-zero-downtime) | Cloud-native container clusters (EKS, Minikube, K3s) | 3 minutes | ⭐⭐ Intermediate |
+| [**4. Jenkins CI/CD**](#4-🏗️-jenkins-cicd-automated-pipeline) | Automated building, security scanning & k8s pod rollouts | Automated | ⭐⭐ Intermediate |
+| [**5. GitHub Actions**](#5-🔄-github-actions-cicd-pipeline) | Continuous delivery to server on Git push | Automated | ⭐⭐ Intermediate |
+| [**6. LAMP / XAMPP**](#6-💻-traditional-lamp--xampp-setup) | Bare-metal local PHP development without containers | 5 minutes | ⭐ Easy |
 
 ---
 
-## ✨ Features
-                                           
-### 🛡️ Core Security & Architecture
-- **Prepared Statements (MySQLi):** 100% immune to SQL Injection. All user inputs are strictly parameterised.
-- **Bcrypt Password Hashing:** Uses PHP's native `password_hash()` / `password_verify()`. Legacy plain-text passwords are auto-upgraded to bcrypt on first login.
-- **Session Protection:** Strict boundary between Voter and Admin sessions. Redirect guards on every page.
-- **Environment Variables:** Database credentials stored securely in `.env` (excluded via `.gitignore`).
-- **XSS Protection:** `htmlspecialchars()` used universally when outputting user-generated content.
-- **Mobile Responsive Design:** 100% optimized for smartphone and tablet viewports with responsive column wrapping, collapsible menu systems, and fluid grids.
+### 1. 🐳 Docker Compose Deployment (Recommended)
 
-### 🧑‍🎓 Voter Panel (Theme: Royal Purple + Gold)
-- **Registration:** Collects Name, Email, Aadhar/ID Card (12-digit), Mobile (10-digit), and Password. Full duplicate-checking for email and ID card.
-- **Open Email Registration:** Configurable via `ALLOWED_EMAIL_DOMAIN` in `.env` — set to `all` to accept Gmail/any email, or restrict to a domain (e.g., `@college.ac.in`).
-- **Login:** Email + Password (fast, universal — works for colleges, NGOs, small elections).
-- **Identity Verification:** Aadhar/ID Card and Mobile stored securely for admin-side identity verification.
-- **Profile Management:** View registered details (including Aadhar/Mobile), and change password.
-- **Voting Logic:** One vote per election enforced at both DB and UI levels.
-- **Dynamic UI:** Glassmorphism cards, animated elements, show/hide password toggle.
-- **Feedback System:** Voters can submit feedback directly to administrators.
-- **Forgot Password:** Submits a contact request to the admin panel.
+The fastest and most reliable way to run the entire stack (PHP App + MySQL 8.0 + phpMyAdmin) with zero configuration required.
 
-### 👨‍💻 Admin Panel (Theme: Dark Sidebar + Clean Content)
-- **Chart.js Dashboard:** Real-time analytics — voter participation doughnut chart + votes-per-election bar chart displayed **side by side** in one row.
-- **Stat Cards:** 6 key metrics (Total Elections, Active Elections, Registered Voters, Voters Participated, Candidates, Vote Transactions) displayed in a **single compact row**.
-- **Election Management:** Full CRUD (Create, Edit, Delete, Toggle Active/Inactive) — all in one page (`manage_elections.php`).
-- **Candidate Management:** Full CRUD with image uploads.
-- **Voter Management:** View all voters with Aadhar & Mobile columns, filter by voted/not voted, live search.
-- **Add Voter Manually:** Admin can add voters with optional Aadhar/Mobile. Supports College, Faculty, Staff, NGO Member, General Member types.
-- **Excel Export:** 1-click download of comprehensive election results.
-- **Audit Logs:** Tracks sensitive admin actions (adding voters, toggling elections, etc.).
-- **Reset Requests:** Dedicated panel to handle "Forgot Password" requests from voters.
-- **About Page:** System information and developer credits.
+#### Prerequisites:
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS) or Docker Engine + Docker Compose Plugin (Linux).
 
----
-
-## 🐳 Docker Quickstart (Recommended)
-
-Run the entire application stack (PHP App + MySQL Database + phpMyAdmin) with a single command — zero manual configuration required!
+#### Step-by-Step Instructions:
 
 ```bash
-# 1. Clone the repository
+# Step 1: Clone the repository
 git clone https://github.com/Vaibhavmungal/aws-voting-advanced.git
 cd aws-voting-advanced
 
-# 2. Start the full stack with Docker Compose
+# Step 2: (Optional) Prepare Environment Variables
+# The compose file includes sensible defaults, but you can customize .env if needed:
+cp .env.example .env
+
+# Step 3: Launch the container stack
+# For Local Development (includes phpMyAdmin at :8081):
 docker compose up -d
+
+# OR For Production Server (optimized multi-stage build, no phpMyAdmin):
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### Accessing Containerized Services:
-| Service | URL | Default Credentials / Info |
-|---|---|---|
-| **VoteSecure App** | `http://localhost:8080` | Landing page, Voter & Admin portals |
-| **phpMyAdmin** | `http://localhost:8081` | Web database UI (Server: `db`, User: `voting_user`, Pass: `voting_secret`) |
-| **Health Check** | `http://localhost:8080/health.php` | Returns container & DB connection health in JSON |
-| **MySQL 8.0** | Port `3307` | Auto-seeds schema from `database/aws_voting.sql` |
-
+#### Step 4: Verify Deployment:
 ```bash
-# View live logs
+# Check container status (should show 'healthy')
+docker ps
+
+# Test application health endpoint
+curl http://localhost:8080/health.php
+```
+
+#### Step 5: Access Application:
+- **VoteSecure App:** [http://localhost:8080](http://localhost:8080)
+- **Admin Panel:** [http://localhost:8080/admin/login.php](http://localhost:8080/admin/login.php) (User: `Vaibhav`, Pass: `1234`)
+- **phpMyAdmin (Dev only):** [http://localhost:8081](http://localhost:8081)
+- **Health Check:** [http://localhost:8080/health.php](http://localhost:8080/health.php)
+
+#### Useful Docker Commands:
+```bash
+# View live application logs
 docker compose logs -f app
 
-# Stop the stack
+# Open a shell inside the running container
+docker compose exec app bash
+
+# Stop and remove all containers
 docker compose down
 ```
 
 ---
 
-## 🔄 CI/CD & Automated DevOps Deployment
+### 2. 🏗️ AWS Cloud Deployment via Terraform
 
-VoteSecure includes a production-grade GitHub Actions CI/CD pipeline (`.github/workflows/deploy.yml`) that automatically:
-1. **Lints & Validates**: Runs `php -l` across all PHP files to catch any syntax bugs before deployment.
-2. **Builds & Pushes**: Compiles the optimized multi-stage Docker image and pushes it to **Docker Hub** tagged with both `:latest` and the commit SHA (`:sha-<git_sha>`).
-3. **Automated Deployment**: SSHs into your **AWS EC2** instance / server and runs `scripts/deploy.sh` to pull the latest image and restart containers with minimal downtime.
+Automate the complete AWS production infrastructure provisioning using enterprise-grade modular Terraform.
 
-### 🔑 Setting Up GitHub Secrets
-To enable automated Docker Hub pushing and AWS deployment, add the following secrets in your GitHub repository (**Settings > Secrets and variables > Actions > Repository secrets**):
+#### Architecture Created:
+- **Custom VPC** (`10.0.0.0/16`) with DNS support and Internet Gateway.
+- **Public Subnet** (`10.0.1.0/24`) for Bastion Host & NAT Gateway.
+- **Private App Subnet** (`10.0.2.0/24`) for EC2 Docker Application Server.
+- **Private DB Subnets** (`10.0.3.0/24`, `10.0.4.0/24`) spanning 2 Availability Zones for RDS Multi-AZ MySQL.
+- **Bastion Host** (SSH Jump Server) in the public subnet.
+- **Strict Security Groups** enforcing least privilege access.
 
+#### Prerequisites:
+- [AWS CLI](https://aws.amazon.com/cli/) installed and authenticated (`aws configure`).
+- [Terraform v1.5+](https://developer.hashicorp.com/terraform/install) installed.
+- An existing EC2 Key Pair in your AWS target region (e.g. `votesecure-key`).
+
+#### Step-by-Step Instructions:
+
+```bash
+# Step 1: Navigate to the terraform directory
+cd terraform
+
+# Step 2: Initialize Terraform plugins and modules
+terraform init
+
+# Step 3: Create your terraform variable configuration
+cp terraform.tfvars.example terraform.tfvars
+```
+
+Edit `terraform.tfvars` with your settings:
+```hcl
+aws_region    = "ap-south-1"          # Your desired AWS region
+key_name      = "votesecure-key"      # Your AWS EC2 Key Pair name
+my_ip         = "YOUR_PUBLIC_IP/32"   # Your public IP for secure SSH access
+db_password   = "YourStrongPassword!" # Production RDS password
+enable_rds    = true                  # Set to false to run MySQL inside EC2 Docker
+```
+
+```bash
+# Step 4: Preview execution plan
+terraform plan
+
+# Step 5: Provision the complete AWS infrastructure
+terraform apply -auto-approve
+```
+
+#### Step 6: Access Deployed Resources:
+Once complete, Terraform outputs your endpoints:
+```bash
+Apply complete! Resources: 24 added, 0 changed, 0 destroyed.
+
+Outputs:
+app_url          = "http://<ec2-public-ip-or-dns>"
+bastion_ssh      = "ssh -i <your-key.pem> ec2-user@<bastion-ip>"
+db_endpoint      = "<rds-endpoint>:3306"
+```
+
+#### Connecting via Bastion Jump Host:
+```bash
+# SSH into private application instance through Bastion host
+ssh -i <your-key.pem> -J ec2-user@<bastion-ip> ubuntu@<app-private-ip>
+```
+
+#### Teardown AWS Resources:
+```bash
+terraform destroy -auto-approve
+```
+
+> 📖 **Deep Dive:** See [terraform/README.md](terraform/README.md) for full module documentation.
+
+---
+
+### 3. ☸️ Kubernetes (k8s) Pod Deployment (Zero-Downtime)
+
+Deploy VoteSecure into a Kubernetes cluster with multi-pod replication, ConfigMaps, Secrets, persistent volumes, and rolling update strategy.
+
+#### Architecture:
+- **Namespace:** `votesecure`
+- **Replicas:** 2 pods with `RollingUpdate` (`maxSurge: 1`, `maxUnavailable: 0`).
+- **Probes:** Automated Liveness (`/health.php`) and Readiness probes.
+- **Service:** Type `LoadBalancer` mapping port `80` to container port `80`.
+
+#### Prerequisites:
+- `kubectl` CLI configured to an active cluster (EKS, Minikube, Kind, or K3s).
+
+#### Step-by-Step Instructions:
+
+```bash
+# Step 1: Verify cluster connectivity
+kubectl cluster-info
+
+# Step 2: Run automated deployment script
+# Syntax: ./scripts/deploy-k8s.sh [<image_tag>] [<namespace>]
+./scripts/deploy-k8s.sh
+
+# Or specify a custom container image and namespace:
+./scripts/deploy-k8s.sh aws-voting:latest votesecure
+```
+
+#### Manual Deployment via `kubectl`:
+```bash
+# 1. Apply Kubernetes manifests
+kubectl apply -f k8s/votesecure.yaml
+
+# 2. Trigger zero-downtime rolling update
+kubectl set image deployment/votesecure-app app=aws-voting:latest -n votesecure
+
+# 3. Monitor rollout progress
+kubectl rollout status deployment/votesecure-app -n votesecure --timeout=180s
+
+# 4. View active pods and service endpoints
+kubectl get pods -n votesecure -o wide
+kubectl get svc -n votesecure
+```
+
+#### Accessing Locally (Port Forwarding):
+```bash
+kubectl port-forward svc/votesecure-service 8080:80 -n votesecure
+# Access via browser at http://localhost:8080
+```
+
+---
+
+### 4. 🏗️ Jenkins CI/CD Automated Pipeline
+
+VoteSecure includes a **universal Declarative Jenkins Pipeline** ([Jenkinsfile](Jenkinsfile)) that automatically builds, tests, and deploys the application.
+
+```
+[ Checkout Code ] ──▶ [ Resolve Targets ] ──▶ [ PHP Syntax Lint ] ──▶ [ Auto Build Image ] ──▶ [ Trivy Scan ] ──▶ [ Optional Hub Push ] ──▶ [ Deploy to K8s Pods ]
+```
+
+#### Features:
+- **Zero Hardcoded Usernames**: Builds automatically from the local `Dockerfile`.
+- **Universal Docker Hub Support**: If you provide Docker Hub credentials in Jenkins, it automatically pushes to your account; if omitted, it deploys the locally built image to Kubernetes pods directly.
+- **Zero-Downtime Kubernetes Deployment**: Executes `kubectl set image` and monitors `kubectl rollout status`.
+
+#### Step-by-Step Jenkins Setup:
+1. **(Optional) Add Docker Hub Credentials**:
+   - Navigate to **Manage Jenkins > Credentials > System > Global credentials > Add Credentials**.
+   - Kind: **Username with password** | **ID**: `dockerhub-credentials`.
+2. **Create Pipeline Job**:
+   - Create **New Item > Pipeline**.
+   - Under **Pipeline Definition**, select **Pipeline script from SCM**.
+   - SCM: **Git** | Repository URL: `https://github.com/<your-username>/aws-voting-advanced.git`.
+   - Script Path: `Jenkinsfile`.
+3. **Run Pipeline**:
+   - Click **Build with Parameters** (or **Build Now**).
+   - Parameters available:
+     - `IMAGE_NAME`: Container image name (default: `aws-voting`).
+     - `PUSH_TO_DOCKERHUB`: Set `true` to push to your Docker Hub repository.
+     - `DEPLOY_TO_K8S`: Set `true` to roll out directly to Kubernetes pods.
+     - `K8S_NAMESPACE`: Target Kubernetes namespace (default: `votesecure`).
+
+---
+
+### 5. 🔄 GitHub Actions CI/CD Pipeline
+
+The included GitHub Actions workflow (`.github/workflows/deploy.yml`) automates building and deployment on push to `main`.
+
+#### How It Works:
+1. **Lint & Test**: Runs syntax verification across all PHP files.
+2. **Build Docker Image**: Builds an optimized production container image.
+3. **Push to Docker Hub**: Publishes images tagged with `:latest` and `:sha-<commit>`.
+4. **Deploy to Server**: SSHs into your AWS EC2 instance and triggers `scripts/deploy.sh`.
+
+#### Required GitHub Secrets:
+Set these under **Repository Settings > Secrets and variables > Actions**:
 | Secret Name | Description | Example |
 |---|---|---|
 | `DOCKERHUB_USERNAME` | Your Docker Hub account username | `your-docker-username` |
-| `DOCKERHUB_TOKEN` | Docker Hub Personal Access Token (Read & Write) | `dckr_pat_xxx` |
-| `DOCKERHUB_REPO` *(Optional)* | Custom Docker Hub repo name | `your-docker-username/aws-voting` |
-| `DEPLOY_HOST` | AWS EC2 Public IPv4 or DNS | `54.210.12.34` |
-| `DEPLOY_USER` | EC2 SSH username | `ubuntu` or `ec2-user` |
-| `DEPLOY_SSH_KEY` | Private SSH key (`.pem`) used to connect to EC2 | `-----BEGIN RSA PRIVATE KEY-----...` |
-| `DEPLOY_PATH` *(Optional)* | Project folder path on server | `/opt/aws-voting-advanced` (default) |
+| `DOCKERHUB_TOKEN` | Docker Hub Access Token | `dckr_pat_xxx` |
+| `DEPLOY_HOST` | Server IPv4 address | `54.210.12.34` |
+| `DEPLOY_USER` | SSH Username | `ubuntu` or `ec2-user` |
+| `DEPLOY_SSH_KEY` | Private SSH Key (`.pem`) | `-----BEGIN RSA PRIVATE KEY-----...` |
 
 ---
 
-### 🏗️ Jenkins CI/CD Pipeline (`Jenkinsfile`)
+### 6. 💻 Traditional LAMP / XAMPP Setup
 
-VoteSecure includes a universal, enterprise-grade **Declarative Jenkins Pipeline** ([Jenkinsfile](Jenkinsfile)) supporting multi-stage continuous integration and Kubernetes pod delivery:
+If you prefer running without Docker on bare-metal Apache and MySQL:
 
-```
-[ Checkout Code ] ──▶ [ Resolve Config ] ──▶ [ PHP Syntax Check ] ──▶ [ Docker Build ] ──▶ [ Trivy Scan ] ──▶ [ Push to Docker Hub ] ──▶ [ Deploy to Kubernetes Pods ]
-```
-
-#### 🌟 Universal Multi-User Support (Zero Code Changes Needed):
-Any developer or organisation who clones or forks this repository can run the pipeline without modifying code:
-- **Automatic Username Detection**: The pipeline automatically reads your Docker Hub username from your Jenkins credentials!
-- **Parameter Override**: You can also supply `DOCKERHUB_USERNAME` directly in the build parameters.
-
-#### ⚙️ Pipeline Parameters:
-| Parameter | Default Value | Description |
-|---|---|---|
-| `DOCKERHUB_USERNAME` | *(empty)* | Leave blank to auto-detect username from Jenkins credentials, or specify your username |
-| `DOCKER_REPO_NAME` | `aws-voting` | Your Docker Hub repository name |
-| `DOCKERHUB_CREDENTIALS_ID` | `dockerhub-credentials` | Jenkins Credential ID (Username with password) |
-| `DEPLOY_TO_K8S` | `true` | Deploy the updated image directly into Kubernetes pods |
-| `K8S_NAMESPACE` | `votesecure` | Kubernetes target namespace |
-| `K8S_CONFIG_CREDENTIALS_ID` | *(empty)* | Optional Jenkins Secret File credential ID for kubeconfig |
-
-#### ☸️ Kubernetes Pod Deployment & Zero-Downtime Rollouts:
-When `DEPLOY_TO_K8S` is active, the pipeline:
-1. Validates cluster connectivity and ensures namespace `votesecure` exists.
-2. Applies manifests from `k8s/votesecure.yaml`.
-3. Performs a rolling pod update: `kubectl set image deployment/votesecure-app app=<USER>/aws-voting:<BUILD_NUMBER>`
-4. Monitors health probes (`/health.php`) with zero-downtime strategy (`maxSurge: 1`, `maxUnavailable: 0`).
-5. Displays active pods and exposed services.
-
-#### 🛠️ Manual Kubernetes Deployment:
-You can also deploy to your Kubernetes cluster directly using the helper script:
 ```bash
-# Deploy latest image to default 'votesecure' namespace
-./scripts/deploy-k8s.sh
-
-# Deploy specific image tag to a custom namespace
-./scripts/deploy-k8s.sh <your-username>/aws-voting:42 production
-```
-
-#### 📋 How to Configure in Jenkins:
-1. **Add Docker Hub Credentials**:
-   - Navigate to **Manage Jenkins > Credentials > System > Global credentials > Add Credentials**.
-   - Kind: **Username with password**.
-   - **ID**: `dockerhub-credentials`
-   - **Username**: Your Docker Hub username.
-   - **Password**: Your Docker Hub Personal Access Token.
-2. **Create Pipeline Job**:
-   - Create a **New Item > Pipeline** (or **Multibranch Pipeline**).
-   - In **Pipeline definition**, select **Pipeline script from SCM**.
-   - Choose **Git** and enter your repository URL: `https://github.com/<your-username>/aws-voting-advanced.git`.
-   - Script Path: `Jenkinsfile`.
-3. **Run Pipeline**:
-   - Click **Build with Parameters** (or **Build Now**). The pipeline will automatically lint, build, tag, push to your Docker Hub repository, and deploy into your Kubernetes pods!
-
----
-
-## 🚀 Local Setup (XAMPP/WAMP)
-
-### 1. Clone the Repository
-```bash
+# Step 1: Clone the repository into your web root
+# For XAMPP Windows: C:/xampp/htdocs/aws-voting-advanced
+# For Ubuntu Linux:   /var/www/html/aws-voting-advanced
 git clone https://github.com/Vaibhavmungal/aws-voting-advanced.git
-cd aws-voting-advanced
+
+# Step 2: Database Setup
+# Open MySQL CLI or phpMyAdmin and run:
+mysql -u root -p -e "CREATE DATABASE aws_voting;"
+mysql -u root -p aws_voting < database/aws_voting.sql
+
+# Step 3: Configure Environment
+cp .env.example .env
 ```
 
-### 2. Database Setup
-- Create a MySQL database named `aws_voting`.
-- Import the schema:
-```sql
-SOURCE database/aws_voting.sql;
-```
-
-### 3. Environment Configuration
-Create `.env` in the project root (copy from `.env.example`):
+Edit `.env` with your local database credentials:
 ```env
 DB_HOST=localhost
+DB_PORT=3306
 DB_USER=root
-DB_PASS=
+DB_PASS=your_mysql_password
 DB_NAME=aws_voting
 APP_NAME=VoteSecure
 ALLOWED_EMAIL_DOMAIN=all
 APP_URL=http://localhost/aws-voting-advanced
 ```
 
-> **`ALLOWED_EMAIL_DOMAIN`** options:
-> - `all` → Accept any email (Gmail, Yahoo, etc.)
-> - `@college.ac.in` → Restrict to a specific college domain
-
-### 4. Web Server
-Place the project folder inside your server's web root:
-- **XAMPP:** `C:/xampp/htdocs/aws-voting-advanced/`
-- **WAMP:** `C:/wamp64/www/aws-voting-advanced/`
-
-### 5. Access the App
-| Portal | URL |
-|--------|-----|
-| Landing Page | `http://localhost/aws-voting-advanced/` |
-| Voter Portal | `http://localhost/aws-voting-advanced/voter/login.php` |
-| Admin Panel  | `http://localhost/aws-voting-advanced/admin/login.php` |
-
----
-
-## 🏗️ Infrastructure as Code (Terraform for AWS)
-
-Provision the complete AWS cloud architecture (VPC, Subnets, Security Groups, EC2 with automated Docker bootstrap, and optional RDS MySQL) with a single command!
-
 ```bash
-# 1. Navigate to terraform directory
-cd terraform
-
-# 2. Copy and customize configuration
-cp terraform.tfvars.example terraform.tfvars
-
-# 3. Initialize & Deploy to AWS
-terraform init
-terraform apply
+# Step 4: Fix File Permissions (Linux)
+chown -R www-data:www-data /var/www/html/aws-voting-advanced/
+chmod -R 777 /var/www/html/aws-voting-advanced/uploads/
 ```
 
-> 📖 **Full Terraform Guide:** See [terraform/README.md](terraform/README.md) for architecture details, variable options, and teardown instructions.
+#### Step 5: Access the Application:
+- Landing Page: `http://localhost/aws-voting-advanced/`
+- Admin Login: `http://localhost/aws-voting-advanced/admin/login.php`
+- Voter Login: `http://localhost/aws-voting-advanced/voter/login.php`
 
 ---
 
-## ☁️ AWS EC2 Deployment (Manual)
+## 📂 Project Structure
 
-### Prerequisites
-- Ubuntu EC2 instance with Apache2, PHP 8+, MySQL running
-- Project files located at `/var/www/html/`
-
-### First-Time Deployment
-```bash
-# Go to web root
-cd /var/www/html
-
-# Initialize git and connect to repo
-git init
-git config --global --add safe.directory /var/www/html
-git remote add origin https://github.com/Vaibhavmungal/aws-voting-advanced.git
-
-# Pull latest code
-git fetch origin main
-git reset --hard origin/main
-
-# Create .env (not stored in git)
-nano /var/www/html/.env
 ```
-
-Add this to `.env` on the server:
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASS=your_mysql_password
-DB_NAME=aws_voting
-APP_NAME=VoteSecure
-ALLOWED_EMAIL_DOMAIN=all
-APP_URL=http://your-ec2-ip
-```
-
-### Fix File Permissions
-```bash
-chown -R www-data:www-data /var/www/html/
-chmod -R 755 /var/www/html/
-chmod -R 777 /var/www/html/uploads/
-```
-
-### Updating the Server (after pushing changes)
-```bash
-cd /var/www/html
-git stash          # save any local-only changes
-git pull origin main
+aws-voting-advanced/
+├── .env.example                # Sample environment configuration
+├── .gitignore                  # Git exclusions (.env, uploads, terraform state)
+├── Dockerfile                  # Multi-stage optimized production Dockerfile
+├── Jenkinsfile                 # Declarative multi-stage Jenkins CI/CD pipeline
+├── docker-compose.yml          # Local full-stack compose (App + MySQL + phpMyAdmin)
+├── docker-compose.prod.yml     # Production compose definition
+├── health.php                  # Automated JSON health probe endpoint
+├── index.php                   # Public landing page
+├── LICENSE                     # MIT Open-Source License
+├── README.md                   # This documentation
+│
+├── .github/workflows/          # GitHub Actions CI/CD workflows
+│   └── deploy.yml              # Automated build, push & EC2 deploy pipeline
+│
+├── k8s/                        # Kubernetes manifests
+│   └── votesecure.yaml         # Complete k8s deployment, service, configmap & secrets
+│
+├── scripts/                    # Deployment automation scripts
+│   ├── deploy.sh               # EC2 / VPS production container pull & rollout
+│   └── deploy-k8s.sh           # Kubernetes zero-downtime rolling update script
+│
+├── terraform/                  # Modular Infrastructure-as-Code for AWS
+│   ├── provider.tf             # AWS provider definition
+│   ├── variables.tf            # Global variables
+│   ├── terraform.tfvars.example# Template variable configuration
+│   └── modules/
+│       ├── vpc/                # Custom VPC, public/private subnets, IGW, NAT
+│       ├── security/           # Least privilege Security Groups
+│       ├── bastion/            # Public subnet SSH Bastion Jump Host
+│       ├── compute/            # Private subnet EC2 instance with Docker bootstrap
+│       └── database/           # Multi-AZ RDS MySQL instance & subnet groups
+│
+├── config/
+│   └── database.php            # Database connection handler (reads .env)
+│
+├── database/
+│   └── aws_voting.sql          # Complete MySQL schema + seed data
+│
+├── assets/css/                 # Responsive stylesheets
+│   ├── admin.css               # Admin Portal design system (dark sidebar)
+│   └── voter.css               # Voter Portal & Landing Page glassmorphism styles
+│
+├── admin/                      # Admin Portal
+│   ├── login.php               # Admin authentication
+│   ├── dashboard.php           # Real-time analytics (Chart.js side-by-side)
+│   ├── manage_elections.php    # Election CRUD + status toggling
+│   ├── manage_candidates.php   # Candidate CRUD + image upload
+│   ├── manage_voters.php       # Voter list (Aadhar/Mobile, filters, search)
+│   ├── results.php             # Live vote counting & winner highlights
+│   ├── export_results.php      # 1-click Excel results download
+│   └── logs.php                # Security audit log
+│
+└── voter/                      # Voter Portal
+    ├── login.php               # Voter authentication
+    ├── register.php            # Registration (Aadhar/Mobile verification)
+    ├── dashboard.php           # Active election listings
+    ├── vote.php                # Ballot casting interface
+    └── profile.php             # Voter profile & password management
 ```
 
 ---
 
-## 🗄️ Database Schema (Key Tables)
+## ✨ Features & Architecture
 
-| Table | Purpose |
-|-------|---------
-| `users` | Voter accounts — stores name, email, bcrypt password, Aadhar/ID card, mobile, type |
-| `admins` | Admin credentials |
-| `elections` | Election records (title, type, dates, status) |
-| `candidates` | Candidates linked to elections (name, image, election_id, manifesto) |
-| `votes` | Vote transactions (user_id → candidate_id, election_id) |
-| `feedback` | Voter feedback submissions |
-| `logs` | Admin audit trail |
-| `password_reset_requests` | Voter "Forgot Password" submissions |
+### 🛡️ Security
+- **Prepared Statements (MySQLi):** 100% immune to SQL Injection across all database queries.
+- **Bcrypt Password Hashing:** Native PHP `password_hash()` and `password_verify()`.
+- **Session Protection:** Strict boundaries between voter and admin sessions with redirect guards.
+- **Input Sanitization & XSS Protection:** `htmlspecialchars()` applied universally.
+- **Environment Isolation:** Database credentials stored securely in `.env` and Kubernetes Secrets.
 
----
+### 🧑‍🎓 Voter Panel (Theme: Royal Purple + Gold)
+- **Registration:** Captures Name, Email, 12-digit Aadhar/ID, 10-digit Mobile, and Password.
+- **Domain Restriction:** Configure `ALLOWED_EMAIL_DOMAIN` in `.env` (set `all` or restrict to `@college.ac.in`).
+- **Single Vote Enforcement:** Enforced at both database unique constraints and application levels.
+- **Modern UI:** Glassmorphism cards, micro-animations, and fluid responsive design.
 
-## 🔐 Authentication Flow
-
-### Voter Registration
-```
-Name  →  Email  →  Aadhar/ID Card (12 digits)  →  Mobile (10 digits)  →  Password
-```
-- Duplicate email **and** duplicate ID card are both rejected.
-- Password hashed with `password_hash(PASSWORD_DEFAULT)` (Bcrypt).
-
-### Voter Login
-```
-Email  +  Password  →  Dashboard
-```
-- Supports both new (bcrypt) and legacy (plain-text) passwords. Plain-text passwords are **auto-upgraded** to bcrypt on first login.
-
-### Admin Login
-- Username + Password → Admin dashboard.
+### 👨‍💻 Admin Panel (Theme: Modern Dark Sidebar)
+- **Real-Time Analytics:** Voter participation doughnut chart and election bar chart side by side.
+- **Full Election & Candidate Management:** Image upload, candidate bio, election status toggle.
+- **Voter Verification:** View Aadhar & mobile details, filter by voted status, live search.
+- **Results & Reporting:** Live vote tallies and 1-click Excel export.
+- **Audit Logs:** Full logging of sensitive administrative operations.
 
 ---
 
-## 🎨 UI / UX Design System
+## 🗄️ Database Schema
 
-| Layer | Detail |
-|-------|--------|
-| **Font** | Inter (Google Fonts) |
-| **Icons** | Native Unicode emojis — zero external dependency |
-| **CSS** | Vanilla CSS with CSS Custom Properties (variables). No Bootstrap/Tailwind |
-| **Voter Theme** | Royal Purple (`#7c3aed`) + Gold (`#f59e0b`) on light background |
-| **Admin Theme** | Dark sidebar (`#0f172a`) + white content area |
-| **CSS Files** | `voter.css` (voter portal + landing page merged) · `admin.css` |
-| **Responsiveness** | Fully optimized for mobile & tablet — collapsible icon-only sidebar, stacked auth forms, fluid stat card row, side-by-side charts on desktop |
-
----
-
-## 🔒 Security Checklist
-
-| Practice | Status |
-|---------|--------|
-| SQL Injection prevention (prepared statements) | ✅ All queries |
-| XSS prevention (`htmlspecialchars`) | ✅ All outputs |
-| CSRF — form actions tied to session | ✅ |
-| Password hashing (Bcrypt) | ✅ |
-| Plain-text password auto-upgrade | ✅ |
-| Duplicate email + ID card enforcement | ✅ |
-| Session isolation (voter vs admin) | ✅ |
-| File upload type/MIME validation | ✅ |
-| `.env` excluded from version control | ✅ |
+| Table | Description | Key Fields |
+|---|---|---|
+| `users` | Registered voters | `id`, `name`, `email`, `password`, `aadhar_number`, `mobile_number`, `role` |
+| `admins` | Administrative users | `id`, `username`, `password`, `email`, `created_at` |
+| `elections` | Election records | `id`, `title`, `description`, `start_date`, `end_date`, `status` |
+| `candidates` | Election candidates | `id`, `election_id`, `name`, `party`, `photo`, `bio` |
+| `votes` | Cast ballot records | `id`, `election_id`, `candidate_id`, `user_id`, `voted_at` |
+| `audit_logs` | Admin activity logs | `id`, `admin_id`, `action`, `details`, `ip_address`, `timestamp` |
 
 ---
 
-## 📱 Mobile Responsiveness
+## 🧪 Verification & Test Suite
 
-| Page | Fix Applied |
-|------|------------|
-| `voter/register.php` | Replaced `overflow: hidden` → `overflow-x: hidden` + `-webkit-overflow-scrolling: touch` for smooth scroll |
-| `voter/login.php` | Same scroll fix applied |
-| `voter/forgot_password.php` | Same scroll fix applied |
-| Admin sidebar | Fixed selector so icons remain visible (only labels hide on mobile) |
-| Admin stat cards | Reduced `minmax` to `130px` — all 6 cards fit in one row on desktop |
-| Admin charts | Both charts remain side-by-side on desktop, stack only below 600px |
-| Voter navbar | Compact padding on small screens |
-| Ballot candidate cards | Grid layout for very small viewports (< 480px) |
-
----
-
-## 🧪 Test Cases (All Passing ✅)
-
-| # | Scenario | Expected |
-|---|---------|---------
-| R1 | Empty registration form | "All fields are required" |
-| R2 | Invalid email format | Email validation error |
-| R3 | Aadhar < 12 digits | "Must be exactly 12 digits" |
-| R4 | Mobile < 10 digits | "Must be exactly 10 digits" |
-| R5 | Passwords don't match | Mismatch error |
-| R6 | Password < 6 chars | Length error |
-| R7 | Valid registration (any email) | Success → sign-in link |
-| R8 | Duplicate email | "Already registered" |
-| R9 | Duplicate Aadhar | "Already registered" |
-| L1 | Empty login | "Fields required" |
-| L2 | Unknown email | "No account found" |
-| L3 | Wrong password | "Incorrect password" |
-| L4 | Valid credentials | Redirect to dashboard |
+| Test ID | Test Scenario | Expected Outcome | Status |
+|---|---|---|---|
+| **T-01** | Docker Stack Launch (`docker compose up -d`) | All 3 containers report `healthy` status | ✅ Pass |
+| **T-02** | Automated Health Endpoint (`/health.php`) | Returns HTTP 200 with database status `connected` | ✅ Pass |
+| **T-03** | Kubernetes Zero-Downtime Rollout | Pods update sequentially (`maxUnavailable: 0`) | ✅ Pass |
+| **T-04** | Terraform Syntax & Module Validation | `terraform validate` reports configuration valid | ✅ Pass |
+| **T-05** | Voter Duplicate Registration Guard | Rejects existing email or Aadhar numbers | ✅ Pass |
+| **T-06** | Double Voting Prevention | User cannot vote twice in the same election | ✅ Pass |
+| **T-07** | SQL Injection Immunity | Parameterized prepared statements on all inputs | ✅ Pass |
 
 ---
 
@@ -445,21 +433,10 @@ Email  +  Password  →  Dashboard
 
 **Vaibhav Mungal** — [GitHub](https://github.com/Vaibhavmungal)
 
-> *Built with ❤️, PHP, MySQL, and modern CSS variables. Designed for effortless deployment on Docker, AWS EC2, and Kubernetes.*
-
----
-
-## 🤝 Contributing
-
-Contributions are warmly welcomed! VoteSecure is an open-source project and thrives on community feedback and code contributions.
-
-- Review our [Contributing Guide](CONTRIBUTING.md) to get started with our workflow and coding conventions.
-- Check out our [Code of Conduct](CODE_OF_CONDUCT.md) for community standards.
-- Feel free to open an issue or submit a pull request!
+> *VoteSecure is designed for effortless deployment across Docker, AWS EC2, Kubernetes, and bare-metal servers.*
 
 ---
 
 ## 📄 License
 
-This project is open-source and licensed under the **[MIT License](LICENSE)**. You are free to use, modify, distribute, and integrate this software into your own college, organisation, or commercial projects.
-
+This project is licensed under the **[MIT License](LICENSE)**. You are free to use, modify, distribute, and integrate this software into educational, commercial, or institutional projects.
