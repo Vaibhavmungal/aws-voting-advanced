@@ -169,26 +169,59 @@ To enable automated Docker Hub pushing and AWS deployment, add the following sec
 
 ### 🏗️ Jenkins CI/CD Pipeline (`Jenkinsfile`)
 
-VoteSecure includes an enterprise-grade **Declarative Jenkins Pipeline** ([Jenkinsfile](Jenkinsfile)) supporting multi-stage continuous integration and delivery:
+VoteSecure includes a universal, enterprise-grade **Declarative Jenkins Pipeline** ([Jenkinsfile](Jenkinsfile)) supporting multi-stage continuous integration and Kubernetes pod delivery:
 
 ```
-[ Checkout Code ] ──▶ [ PHP Syntax Lint ] ──▶ [ Docker Build ] ──▶ [ Trivy Security Scan ] ──▶ [ Push to Docker Hub ] ──▶ [ Deploy ]
+[ Checkout Code ] ──▶ [ Resolve Config ] ──▶ [ PHP Syntax Check ] ──▶ [ Docker Build ] ──▶ [ Trivy Scan ] ──▶ [ Push to Docker Hub ] ──▶ [ Deploy to Kubernetes Pods ]
 ```
 
-#### How to Configure in Jenkins:
+#### 🌟 Universal Multi-User Support (Zero Code Changes Needed):
+Any developer or organisation who clones or forks this repository can run the pipeline without modifying code:
+- **Automatic Username Detection**: The pipeline automatically reads your Docker Hub username from your Jenkins credentials!
+- **Parameter Override**: You can also supply `DOCKERHUB_USERNAME` directly in the build parameters.
+
+#### ⚙️ Pipeline Parameters:
+| Parameter | Default Value | Description |
+|---|---|---|
+| `DOCKERHUB_USERNAME` | *(empty)* | Leave blank to auto-detect username from Jenkins credentials, or specify your username |
+| `DOCKER_REPO_NAME` | `aws-voting` | Your Docker Hub repository name |
+| `DOCKERHUB_CREDENTIALS_ID` | `dockerhub-credentials` | Jenkins Credential ID (Username with password) |
+| `DEPLOY_TO_K8S` | `true` | Deploy the updated image directly into Kubernetes pods |
+| `K8S_NAMESPACE` | `votesecure` | Kubernetes target namespace |
+| `K8S_CONFIG_CREDENTIALS_ID` | *(empty)* | Optional Jenkins Secret File credential ID for kubeconfig |
+
+#### ☸️ Kubernetes Pod Deployment & Zero-Downtime Rollouts:
+When `DEPLOY_TO_K8S` is active, the pipeline:
+1. Validates cluster connectivity and ensures namespace `votesecure` exists.
+2. Applies manifests from `k8s/votesecure.yaml`.
+3. Performs a rolling pod update: `kubectl set image deployment/votesecure-app app=<USER>/aws-voting:<BUILD_NUMBER>`
+4. Monitors health probes (`/health.php`) with zero-downtime strategy (`maxSurge: 1`, `maxUnavailable: 0`).
+5. Displays active pods and exposed services.
+
+#### 🛠️ Manual Kubernetes Deployment:
+You can also deploy to your Kubernetes cluster directly using the helper script:
+```bash
+# Deploy latest image to default 'votesecure' namespace
+./scripts/deploy-k8s.sh
+
+# Deploy specific image tag to a custom namespace
+./scripts/deploy-k8s.sh <your-username>/aws-voting:42 production
+```
+
+#### 📋 How to Configure in Jenkins:
 1. **Add Docker Hub Credentials**:
    - Navigate to **Manage Jenkins > Credentials > System > Global credentials > Add Credentials**.
    - Kind: **Username with password**.
    - **ID**: `dockerhub-credentials`
-   - **Username**: Your Docker Hub username (e.g. `vaibhavmungal`).
+   - **Username**: Your Docker Hub username.
    - **Password**: Your Docker Hub Personal Access Token.
 2. **Create Pipeline Job**:
    - Create a **New Item > Pipeline** (or **Multibranch Pipeline**).
    - In **Pipeline definition**, select **Pipeline script from SCM**.
-   - Choose **Git** and enter repository URL: `https://github.com/Vaibhavmungal/aws-voting-advanced.git`.
+   - Choose **Git** and enter your repository URL: `https://github.com/<your-username>/aws-voting-advanced.git`.
    - Script Path: `Jenkinsfile`.
 3. **Run Pipeline**:
-   - Click **Build Now**. The pipeline will automatically lint, build, tag, and publish your container to Docker Hub!
+   - Click **Build with Parameters** (or **Build Now**). The pipeline will automatically lint, build, tag, push to your Docker Hub repository, and deploy into your Kubernetes pods!
 
 ---
 
