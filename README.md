@@ -20,6 +20,112 @@ VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online
 
 ---
 
+## 📋 Required Software & Version Matrix
+
+Below are the recommended and minimum supported versions for all technologies, runtimes, container engines, and DevOps tools used across VoteSecure:
+
+| Category | Software / Tool | Recommended Version | Minimum Version | Purpose in VoteSecure |
+|---|---|---|---|---|
+| **Container Engine** | **Docker Engine** | `25.0+` / `24.0+` | `20.10+` | Container runtime packaging PHP app and services |
+| **Orchestration** | **Docker Compose** | `v2.24+` / `v2.20+` | `v2.0.0+` | Multi-container stack orchestration (App + MySQL + phpMyAdmin) |
+| **CI/CD Server** | **Jenkins** | `2.426+` (LTS) | `2.400+` | Automated building, linting, Trivy security scan, and k8s pod rollouts |
+| **Cloud Native** | **Kubernetes (k8s)** | `v1.28+` / `v1.29+` | `v1.24+` | Container pod scaling, self-healing, and zero-downtime rolling updates |
+| **K8s CLI** | **kubectl** | `v1.28+` | `v1.24+` | Command-line control plane client for cluster deployments |
+| **Cloud IaC** | **Terraform** | `v1.7+` | `v1.5.0+` | Automated AWS infrastructure (VPC, Bastion, EC2, RDS) |
+| **Cloud Provider** | **AWS CLI** | `v2.15+` | `v2.0+` | AWS command-line authentication and configuration |
+| **Backend Runtime**| **PHP** | `8.2+` / `8.3` | `8.1+` | Core backend logic (`mysqli`, `pdo`, `mbstring`, `curl`) |
+| **Database** | **MySQL Server** | `8.0+` | `8.0.28+` | Relational database engine for elections, candidates, voters & votes |
+| **Web Server** | **Apache HTTP Server** | `2.4.57+` | `2.4+` | Web server with `mod_rewrite` URL routing |
+| **VCS** | **Git** | `2.40+` | `2.30+` | Source code versioning and pipeline checkout |
+| **Security Scanner**| **Trivy** *(Optional)* | `0.48+` | `0.38+` | Container vulnerability assessment in CI/CD pipeline |
+
+---
+
+## ⚙️ How the Project Works (Step-by-Step Architecture & Lifecycle)
+
+VoteSecure connects administrators, voters, database engines, and automated DevOps infrastructure into a unified and secure online election system.
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           VOTESECURE SYSTEM LIFECYCLE                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  1. ADMIN SETUP ──▶ 2. VOTER AUTH ──▶ 3. BOOTH CASTING ──▶ 4. LIVE AUDITING & RESULTS
+        │                  │                  │                         │
+  ┌───────────┐      ┌───────────┐      ┌───────────┐             ┌───────────┐
+  │ Create    │      │ Register/ │      │ Single-   │             │ Real-Time │
+  │ Elections │      │ Login     │      │ Ballot    │             │ Turnout   │
+  │ & Add     │      │ (Aadhar & │      │ Lock      │             │ Charts &  │
+  │ Candidates│      │ Password) │      │ (Atomic)  │             │ Export    │
+  └───────────┘      └───────────┘      └───────────┘             └───────────┘
+        │                  │                  │                         │
+        └──────────────────┴─────────┬────────┴─────────────────────────┘
+                                     ▼
+                      ┌─────────────────────────────┐
+                      │    MySQL 8.0 Database       │
+                      │  (Transactions & Relations) │
+                      └─────────────────────────────┘
+                                     ▲
+                                     │
+                      ┌─────────────────────────────┐
+                      │    DevOps & CI/CD Engine    │
+                      │  (Docker ➜ Jenkins ➜ K8s)   │
+                      └─────────────────────────────┘
+```
+
+### 1️⃣ Phase 1: System Initialization & Bootstrapping
+1. **Container / Server Startup**: Docker Compose, Kubernetes, or Apache initializes PHP 8.2 with required extensions (`mysqli`, `mbstring`, `curl`).
+2. **Database Auto-Seeding**: MySQL initializes schema from `database/aws_voting.sql`, creating tables (`users`, `admins`, `elections`, `candidates`, `votes`, `audit_logs`) and seeding the initial administrator account (`Vaibhav` / `1234`).
+3. **Environment Isolation**: `config/database.php` reads database credentials and settings (such as allowed email domains) securely from environment variables (`.env` or Kubernetes secrets).
+4. **Health Check Probe**: `health.php` verifies backend runtime and MySQL database connectivity, returning a JSON status `{"status": "healthy", "database": "connected"}` for Kubernetes and Docker liveness checks.
+
+---
+
+### 2️⃣ Phase 2: Administrator Workflow (Election Management)
+1. **Admin Authentication**: Admin logs into `/admin/login.php` with Bcrypt password verification. The system generates a dedicated admin session (`$_SESSION['admin']`) and logs the login IP address in `audit_logs`.
+2. **Election Configuration**: Admin visits `/admin/manage_elections.php` to create elections, defining titles, election categories, date windows, and toggling active/inactive status.
+3. **Candidate Registration**: Admin navigates to `/admin/manage_candidates.php` to register candidates for specific elections, uploading profile pictures (saved to `/uploads/`) and writing candidate biographies and party affiliations.
+4. **Voter Verification & Roster Control**: Admin monitors registered voters on `/admin/manage_voters.php`, reviewing 12-digit Aadhar IDs, 10-digit mobile numbers, and voting participation indicators. Admin can also manually enroll voters (`add_voter.php`).
+5. **Real-Time Analytics Dashboard**: `/admin/dashboard.php` renders side-by-side Chart.js visualizations (Voter turnout doughnut chart + votes-per-election bar chart) with live calculations from the database.
+6. **Results & Reporting**: Live election outcomes are tallied on `/admin/results.php` with automatic winner highlights. Admin can download full audited spreadsheets via `/admin/export_results.php`.
+
+---
+
+### 3️⃣ Phase 3: Voter Journey (Secure Ballot Casting)
+1. **Voter Registration**: 
+   - New voters register at `/voter/register.php` with their Name, Email, 12-digit Aadhar/ID Number, 10-digit Mobile Number, and Password.
+   - The backend validates strict regex for Aadhar (12 numeric digits) and Mobile (10 digits).
+   - Email domain rules configured via `ALLOWED_EMAIL_DOMAIN` are enforced (supports `all` or institution-specific domains like `@college.ac.in`).
+   - Duplicate prevention checks verify that neither the email nor the Aadhar number is already in use.
+   - Passwords are encrypted using PHP's native `password_hash($pass, PASSWORD_BCRYPT)`.
+2. **Voter Authentication**: Voters log in at `/voter/login.php`. Session guards protect all `/voter/` routes, redirecting unauthenticated traffic to login.
+3. **Election Exploration**: The voter dashboard (`/voter/dashboard.php`) fetches all currently active elections and displays their start/end dates.
+4. **Entering the Voting Booth**: Clicking "Vote Now" opens `/voter/vote.php` for the selected election. The platform presents responsive candidate cards featuring photos, names, parties, and bios.
+5. **Atomic Ballot Submission**: 
+   - The voter selects their candidate and submits their choice.
+   - The backend begins a database transaction:
+     - Checks if the voter has already voted in this election.
+     - Inserts the ballot record into `votes` table (`election_id`, `candidate_id`, `user_id`, `voted_at`).
+     - Updates the voter's participation record.
+     - Commits the transaction.
+6. **Duplicate Voting Lock**: If a voter attempts to vote in the same election again, database uniqueness checks and UI guards intercept the request and redirect immediately to `/voter/already_voted.php`.
+7. **Post-Vote Confirmation**: Voter sees a confirmation screen (`/voter/vote_success.php`) and can view their profile or submit feedback to administrators (`/voter/feedback.php`).
+
+---
+
+### 4️⃣ Phase 4: Automated DevOps & Deployment Workflow
+1. **Code Commit**: A developer commits code and pushes to GitHub.
+2. **Continuous Integration**:
+   - **GitHub Actions** (`.github/workflows/deploy.yml`) or **Jenkins Pipeline** (`Jenkinsfile`) triggers automatically.
+   - Runs syntax validation (`php -l`) across all PHP files.
+   - Builds optimized multi-stage Docker image from `Dockerfile`.
+   - Runs vulnerability scan with Trivy for CVE mitigation.
+3. **Continuous Delivery & Zero-Downtime Rollout**:
+   - **Kubernetes**: Deploys via `scripts/deploy-k8s.sh` using rolling updates (`maxSurge: 1, maxUnavailable: 0`). A new container pod spins up, passes the `/health.php` readiness probe, and only then is the old pod retired.
+   - **AWS Cloud**: Terraform provisions high-availability multi-tier infrastructure (custom VPC, private subnets, Bastion host, EC2 compute, and RDS MySQL) with automated Docker bootstrap.
+
+---
+
 ## 🚀 Step-by-Step Deployment Guide
 
 Choose your preferred deployment method below:
