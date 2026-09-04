@@ -212,7 +212,27 @@ Place the project folder inside your server's web root:
 
 ---
 
-## ☁️ AWS EC2 Deployment
+## 🏗️ Infrastructure as Code (Terraform for AWS)
+
+Provision the complete AWS cloud architecture (VPC, Subnets, Security Groups, EC2 with automated Docker bootstrap, and optional RDS MySQL) with a single command!
+
+```bash
+# 1. Navigate to terraform directory
+cd terraform
+
+# 2. Copy and customize configuration
+cp terraform.tfvars.example terraform.tfvars
+
+# 3. Initialize & Deploy to AWS
+terraform init
+terraform apply
+```
+
+> 📖 **Full Terraform Guide:** See [terraform/README.md](terraform/README.md) for architecture details, variable options, and teardown instructions.
+
+---
+
+## ☁️ AWS EC2 Deployment (Manual)
 
 ### Prerequisites
 - Ubuntu EC2 instance with Apache2, PHP 8+, MySQL running

@@ -1,0 +1,33 @@
+# ==============================================================================
+# VoteSecure — Terraform Variable Definitions Example
+# Copy this file to 'terraform.tfvars' and customize for your deployment.
+# ==============================================================================
+
+# AWS Region (e.g. ap-south-1 for Mumbai, us-east-1 for N. Virginia)
+aws_region   = "ap-south-1"
+project_name = "votesecure"
+environment  = "prod"
+
+# EC2 Instance Type (t3.micro or t2.micro are Free Tier eligible)
+instance_type    = "t3.micro"
+root_volume_size = 20
+
+# Existing AWS Key Pair for SSH access (e.g. "my-aws-key")
+ssh_key_name     = ""
+allowed_ssh_cidr = "0.0.0.0/0"
+
+# Allocate a persistent Elastic IP (recommended)
+enable_elastic_ip = true
+
+# Database Configuration
+# Set enable_rds = false to run MySQL inside Docker on EC2 (Free-Tier friendly)
+# Set enable_rds = true to provision an isolated AWS RDS MySQL instance
+enable_rds         = false
+rds_instance_class = "db.t3.micro"
+db_name            = "aws_voting"
+db_username        = "voting_user"
+db_password        = "VotingSecureSecret2026!"
+
+# Docker Hub Image to deploy
+docker_image = "vaibhavmungal/aws-voting"
+image_tag    = "latest"
