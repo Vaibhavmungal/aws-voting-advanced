@@ -46,6 +46,252 @@ Below are the recommended and minimum supported versions along with official dir
 
 ---
 
+## 📥 Prerequisites & Service Installation (AWS EC2 / Ubuntu 24.04 LTS)
+
+> All cloud infrastructure and CI/CD platforms — **AWS EC2**, **Docker**, **Jenkins**, and **Kubernetes** — run on **Linux (Ubuntu 24.04 LTS)**. Use these copy-paste commands to set up your AWS EC2 instance from scratch.
+
+---
+
+### 1. 🔧 Git
+
+```bash
+sudo apt update
+sudo apt install -y git
+
+# Verify
+git --version
+# git version 2.x.x
+```
+
+---
+
+### 2. 🐘 PHP 8.2 + Required Extensions
+
+```bash
+sudo apt update
+sudo apt install -y software-properties-common
+sudo add-apt-repository ppa:ondrej/php -y
+sudo apt update
+
+sudo apt install -y \
+  php8.2 \
+  php8.2-cli \
+  php8.2-mysql \
+  php8.2-gd \
+  php8.2-zip \
+  php8.2-mbstring \
+  php8.2-xml \
+  php8.2-curl \
+  php8.2-opcache \
+  php8.2-mysqli
+
+# Verify
+php --version
+# PHP 8.2.x
+```
+
+---
+
+### 3. 🐬 MySQL 8.0
+
+```bash
+sudo apt update
+sudo apt install -y mysql-server
+
+sudo systemctl start mysql
+sudo systemctl enable mysql
+
+# Secure the installation (set root password, remove test DBs)
+sudo mysql_secure_installation
+
+# Create database and import VoteSecure schema
+sudo mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS aws_voting;"
+sudo mysql -u root -p aws_voting < database/aws_voting.sql
+
+# Verify
+mysql --version
+# mysql  Ver 8.0.x
+```
+
+---
+
+### 4. 🌐 Apache 2.4
+
+```bash
+sudo apt update
+sudo apt install -y apache2
+
+# Enable URL rewriting (needed for clean routes)
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+sudo systemctl enable apache2
+
+# Set correct permissions for web root
+sudo chown -R www-data:www-data /var/www/html
+sudo chmod -R 755 /var/www/html
+
+# Verify
+apache2 -v
+# Server version: Apache/2.4.x
+```
+
+---
+
+### 5. 🐳 Docker & Docker Compose (Ubuntu 24.04 LTS)
+
+> Required to run the containerized stack (`votesecure_app` + `votesecure_db` + `votesecure_phpmyadmin`).
+
+```bash
+# Install dependencies
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg lsb-release
+
+# Add Docker's official GPG key for Ubuntu 24.04
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Add Docker repository for Ubuntu 24.04 (noble)
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine + Compose plugin
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Allow running Docker without sudo
+sudo usermod -aG docker $USER
+newgrp docker
+
+# If running Jenkins on the same server, grant Jenkins docker privileges:
+sudo usermod -aG docker jenkins 2>/dev/null || true
+sudo systemctl restart docker
+
+# Start and enable Docker on boot
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Verify
+docker --version          # Docker version 25.x.x / 24.x.x
+docker compose version    # Docker Compose version v2.x.x
+```
+
+---
+
+### 6. 🏗️ Jenkins (Self-Hosted CI/CD on Ubuntu 24.04)
+
+> Install Jenkins on your AWS EC2 Ubuntu 24.04 instance to automate the entire build, test, and Kubernetes deployment pipeline.
+
+```bash
+# Install Java (Jenkins requires JDK 17 or 21)
+sudo apt update
+sudo apt install -y openjdk-17-jdk
+
+java -version
+# openjdk version "17.x.x"
+
+# Add official Jenkins repository key and repo
+sudo install -m 0755 -d /usr/share/keyrings
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+# Install Jenkins
+sudo apt update
+sudo apt install -y jenkins
+
+# Grant Jenkins user access to Docker daemon
+sudo usermod -aG docker jenkins
+sudo systemctl restart jenkins
+
+# Start and enable Jenkins
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+
+# Retrieve initial admin unlock password
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+# Access Jenkins at: http://<your-ec2-public-ip>:8080
+
+# 💡 PIPELINE DEPENDENCIES:
+# Install PHP syntax checking dependencies on Jenkins host:
+sudo apt update
+sudo apt install -y php-cli php-xml php-mbstring php-zip php-gd php-mysql php-curl
+```
+
+---
+
+### 7. ☸️ Kubernetes (kubectl CLI on Ubuntu 24.04)
+
+> Required to manage and trigger zero-downtime rolling deployments to Kubernetes pods.
+
+```bash
+# Download official Kubernetes signing key
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+# Add Kubernetes apt repository
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+
+# Install kubectl
+sudo apt update
+sudo apt install -y kubectl
+
+# Verify
+kubectl version --client
+# Client Version: v1.29.x
+```
+
+---
+
+### 8. 🏗️ HashiCorp Terraform & AWS CLI v2 (Ubuntu 24.04)
+
+> Required for automated Infrastructure-as-Code provisioning of AWS VPC, Bastion, EC2, and RDS.
+
+```bash
+# Install HashiCorp Terraform
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install -y terraform
+
+# Install AWS CLI v2
+sudo apt install -y unzip curl
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip -q awscliv2.zip
+sudo ./aws/install --update
+rm -rf aws awscliv2.zip
+
+# Verify
+terraform --version
+aws --version
+```
+
+---
+
+### 9. ✅ Verify All Services (Ubuntu 24.04 LTS)
+
+Run this single command block on your AWS EC2 instance to confirm all prerequisites are installed and operating:
+
+```bash
+git --version            # git version 2.x.x
+php --version            # PHP 8.2.x
+mysql --version          # mysql  Ver 8.0.x
+apache2 -v               # Server version: Apache/2.4.x
+docker --version         # Docker version 25.x.x / 24.x.x
+docker compose version   # Docker Compose version v2.x.x
+java -version            # openjdk version "17.x.x"  (for Jenkins)
+jenkins --version        # Jenkins 2.x.x
+kubectl version --client # Client Version: v1.29.x
+terraform --version      # Terraform v1.7.x
+aws --version            # aws-cli/2.x.x
+```
+
+---
+
 ## ⚙️ How the Project Works (Step-by-Step Architecture & Lifecycle)
 
 VoteSecure connects administrators, voters, database engines, and automated DevOps infrastructure into a unified, secure online election system.
@@ -53,65 +299,6 @@ VoteSecure connects administrators, voters, database engines, and automated DevO
 ### 🎨 3D Interactive & Animated Architecture Diagram
 
 ![VoteSecure 3D Cloud Architecture](assets/images/aws-architecture-3d.svg)
-
-```mermaid
-graph TD
-    classDef clientStyle fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
-    classDef edgeStyle fill:#1e293b,stroke:#FF9900,stroke-width:2px,color:#FFB84D;
-    classDef dmzStyle fill:#0e2238,stroke:#0284c7,stroke-width:2px,color:#bae6fd;
-    classDef computeStyle fill:#170d2b,stroke:#a855f7,stroke-width:2px,color:#e9d5ff;
-    classDef dataStyle fill:#0b2119,stroke:#10b981,stroke-width:2px,color:#a7f3d0;
-    classDef devopsStyle fill:#1e1b4b,stroke:#ec4899,stroke-width:2px,color:#fbcfe8;
-
-    subgraph Step1["🪜 STEP 1: EDGE & INGRESS LAYER"]
-        Users["👥 Voters & Administrators<br/>(HTTPS / Port 443)"]:::clientStyle
-        R53["🌐 AWS Route 53<br/>(DNS & Latency Routing)"]:::edgeStyle
-        WAF["🛡️ AWS WAF & Shield<br/>(DDoS & SQLi Defense)"]:::edgeStyle
-        IGW["🚪 Internet Gateway<br/>(VPC Ingress 0.0.0.0/0)"]:::edgeStyle
-    end
-
-    subgraph Step2["🪜 STEP 2: PUBLIC DMZ SUBNET (10.0.1.0/24)"]
-        ALB["⚖️ Application Load Balancer (ALB)<br/>(SSL/TLS Termination & Path Routing)"]:::dmzStyle
-        Bastion["🏰 Bastion Jump Host (EC2)<br/>(Secure SSH Port 22 Gateway)"]:::dmzStyle
-        NAT["🔄 AWS NAT Gateway<br/>(Outbound Internet for Private Subnets)"]:::dmzStyle
-    end
-
-    subgraph Step3["🪜 STEP 3: PRIVATE APPLICATION SUBNET (10.0.2.0/24)"]
-        ASG["⚡ Auto Scaling Group (ASG)<br/>(Dynamic EC2 Compute Scaling)"]:::computeStyle
-        Docker1["🐳 VoteSecure Primary Container<br/>(PHP 8.2 Apache / Health Probe)"]:::computeStyle
-        Docker2["☸️ VoteSecure Kubernetes Pod 2<br/>(Zero-Downtime Rolling Replica)"]:::computeStyle
-    end
-
-    subgraph Step4["🪜 STEP 4: PRIVATE DATA & STORAGE TIER (10.0.3.0/24 & 10.0.4.0/24)"]
-        RDS_Primary["🗄️ Amazon RDS MySQL 8.0 (Primary)<br/>(AZ-1 / Port 3306 / Prepared Statements)"]:::dataStyle
-        RDS_Standby["🔄 Multi-AZ Standby Replica<br/>(AZ-2 / Sync Replication / Auto-Failover)"]:::dataStyle
-        S3["📦 Amazon S3 & Secrets Manager<br/>(Candidate Images, Backups & KMS Encryption)"]:::dataStyle
-    end
-
-    subgraph Step5["🪜 STEP 5: MONITORING, OBSERVABILITY & CI/CD"]
-        CloudWatch["📊 Amazon CloudWatch<br/>(Container Metrics, CPU Alarms & Logs)"]:::devopsStyle
-        Jenkins["🏗️ Jenkins & GitHub Actions<br/>(Automated Build, Trivy & K8s Rollout)"]:::devopsStyle
-    end
-
-    Users --> R53
-    R53 --> WAF
-    WAF --> IGW
-    IGW --> ALB
-    Users -.->|Admin SSH| Bastion
-    Bastion -.->|Internal SSH 22| ASG
-    ALB -->|Forward HTTP 80| Docker1
-    ALB -->|Forward HTTP 80| Docker2
-    ASG --- Docker1
-    ASG --- Docker2
-    Docker1 -->|Egress Updates| NAT
-    NAT --> IGW
-    Docker1 -->|SQL Transactions :3306| RDS_Primary
-    Docker2 -->|SQL Transactions :3306| RDS_Primary
-    RDS_Primary -.->|Sync Replication| RDS_Standby
-    Docker1 -.->|Photo Uploads / Presigned URLs| S3
-    ASG -.->|Metrics & Logs| CloudWatch
-    Jenkins -.->|Deploy Rolling Pods| Docker2
-```
 
 ### 1️⃣ Phase 1: System Initialization & Bootstrapping
 1. **Container / Server Startup**: Docker Compose, Kubernetes, or Apache initializes PHP 8.2 with required extensions (`mysqli`, `mbstring`, `curl`).
