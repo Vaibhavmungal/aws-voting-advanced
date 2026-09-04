@@ -167,6 +167,31 @@ To enable automated Docker Hub pushing and AWS deployment, add the following sec
 
 ---
 
+### 🏗️ Jenkins CI/CD Pipeline (`Jenkinsfile`)
+
+VoteSecure includes an enterprise-grade **Declarative Jenkins Pipeline** ([Jenkinsfile](Jenkinsfile)) supporting multi-stage continuous integration and delivery:
+
+```
+[ Checkout Code ] ──▶ [ PHP Syntax Lint ] ──▶ [ Docker Build ] ──▶ [ Trivy Security Scan ] ──▶ [ Push to Docker Hub ] ──▶ [ Deploy ]
+```
+
+#### How to Configure in Jenkins:
+1. **Add Docker Hub Credentials**:
+   - Navigate to **Manage Jenkins > Credentials > System > Global credentials > Add Credentials**.
+   - Kind: **Username with password**.
+   - **ID**: `dockerhub-credentials`
+   - **Username**: Your Docker Hub username (e.g. `vaibhavmungal`).
+   - **Password**: Your Docker Hub Personal Access Token.
+2. **Create Pipeline Job**:
+   - Create a **New Item > Pipeline** (or **Multibranch Pipeline**).
+   - In **Pipeline definition**, select **Pipeline script from SCM**.
+   - Choose **Git** and enter repository URL: `https://github.com/Vaibhavmungal/aws-voting-advanced.git`.
+   - Script Path: `Jenkinsfile`.
+3. **Run Pipeline**:
+   - Click **Build Now**. The pipeline will automatically lint, build, tag, and publish your container to Docker Hub!
+
+---
+
 ## 🚀 Local Setup (XAMPP/WAMP)
 
 ### 1. Clone the Repository
