@@ -388,295 +388,211 @@ The AWS cloud deployment utilizes a battle-tested **Multi-AZ 3-Tier Enterprise A
 
 ---
 
-## 🚀 Step-by-Step Deployment Guide
+## 🚀 Automated CI/CD Deployment Guide (Step-by-Step Setup)
 
-Choose your preferred deployment method below:
+VoteSecure features two enterprise-grade continuous integration and continuous deployment (CI/CD) pipelines designed for automated testing, container packaging, security scanning, and zero-downtime rollouts:
 
-| Method | Best For | Estimated Time | Complexity |
+| Pipeline | Automation Tool | Trigger | Deployment Target | Key Capabilities |
+|---|---|---|---|---|
+| [**1. Jenkins CI/CD Pipeline**](#1-🏗️-jenkins-cicd-pipeline-setup--deployment) | Jenkins (Self-Hosted on EC2) | Webhook / Manual "Build with Parameters" | **Kubernetes Pods & Docker** | PHP syntax check, multi-stage Docker build, Trivy CVE scan, dynamic Docker Hub push, zero-downtime k8s rolling rollout |
+| [**2. GitHub Actions CI/CD**](#2-🔄-github-actions-cicd-pipeline-setup--deployment) | GitHub Cloud Runners | Git push to `main` branch | **AWS EC2 Production Server** | Automated PHP lint, Docker image push to Docker Hub (`:latest` & `:sha`), SSH automated zero-downtime deployment |
+
+---
+
+### 1. 🏗️ Jenkins CI/CD Pipeline Setup & Deployment
+
+The VoteSecure **Declarative Jenkins Pipeline** ([Jenkinsfile](Jenkinsfile)) provides end-to-end automation from code checkout to Kubernetes pod rollout.
+
+```text
+[ Checkout SCM ] ──▶ [ Resolve Targets ] ──▶ [ PHP Syntax Check ] ──▶ [ Auto Build Image ] ──▶ [ Trivy Scan ] ──▶ [ Optional Hub Push ] ──▶ [ Deploy to K8s Pods ]
+```
+
+#### 📋 Step-by-Step Jenkins Setup Guide (From Scratch on AWS EC2):
+
+##### Step 1: Install Jenkins on AWS EC2 (Ubuntu 24.04 LTS)
+If you haven't installed Jenkins yet, run these commands on your EC2 instance (or refer to the Prerequisites section above):
+```bash
+# 1. Install Java 17
+sudo apt update && sudo apt install -y openjdk-17-jdk
+
+# 2. Add Jenkins official repository
+sudo install -m 0755 -d /usr/share/keyrings
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+# 3. Install and start Jenkins
+sudo apt update && sudo apt install -y jenkins
+sudo systemctl enable --now jenkins
+
+# 4. Grant Jenkins user permission to run Docker commands
+sudo usermod -aG docker jenkins
+sudo systemctl restart jenkins
+
+# 5. Retrieve initial admin unlock password
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+```
+> ⚠️ **AWS Security Group Requirement:** Ensure port `8080` (TCP) is opened in your EC2 instance Security Group to access the Jenkins web dashboard.
+
+---
+
+##### Step 2: Unlock Jenkins & Install Recommended Plugins
+1. Open your browser and navigate to: `http://<your-ec2-public-ip>:8080`.
+2. Paste the **Administrator Password** retrieved from `/var/lib/jenkins/secrets/initialAdminPassword`.
+3. Select **"Install suggested plugins"** and allow the installer to complete.
+4. Create your Admin user (e.g. Username: `admin`, Password: `<your-password>`).
+5. (Recommended) Go to **Manage Jenkins > Plugins > Available plugins**, search for and install:
+   - **Docker Pipeline**
+   - **Pipeline: Stage View**
+   - **Kubernetes CLI** (if connecting via Kubeconfig credentials)
+
+---
+
+##### Step 3: Configure Docker Hub Credentials (Optional for Pushing)
+The pipeline dynamically reads your Docker Hub credentials without hardcoding any usernames:
+1. Navigate to **Manage Jenkins > Credentials > System > Global credentials > Add Credentials**.
+2. Set **Kind**: `Username with password`.
+3. Set **Scope**: `Global`.
+4. Set **ID**: `dockerhub-credentials` *(Must match the default parameter)*.
+5. Enter your Docker Hub **Username** and **Personal Access Token** (or Password).
+6. Click **Create**.
+
+---
+
+##### Step 4: Create the VoteSecure Pipeline Job
+1. From the Jenkins Dashboard, click **New Item**.
+2. Enter Item Name: `votesecure-pipeline` and choose **Pipeline**, then click **OK**.
+3. Under the **General** tab, check **This project is parameterized** (The pipeline will auto-detect parameters from `Jenkinsfile` on first run).
+4. Scroll down to the **Pipeline** section:
+   - **Definition**: Select **Pipeline script from SCM**.
+   - **SCM**: Select **Git**.
+   - **Repository URL**: `https://github.com/Vaibhavmungal/aws-voting-advanced.git` (or your forked repository URL).
+   - **Branch Specifier**: `*/main`.
+   - **Script Path**: `Jenkinsfile`.
+5. Click **Save**.
+
+---
+
+##### Step 5: (Optional) Configure Webhook for Automated Trigger on Git Push
+1. In your Jenkins Job configuration, under **Build Triggers**, check:
+   - **GitHub hook trigger for GITScm polling** OR
+   - **Poll SCM** (Schedule: `H/5 * * * *` to check every 5 minutes).
+2. On GitHub (**Repository > Settings > Webhooks > Add Webhook**):
+   - **Payload URL**: `http://<your-ec2-ip>:8080/github-webhook/`
+   - **Content type**: `application/json`
+   - **Events**: Just the `push` event.
+
+---
+
+##### Step 6: Execute the Pipeline ("Build with Parameters")
+1. Click **Build with Parameters** in the left sidebar.
+2. Review/customize the build parameters:
+   | Parameter | Default | Purpose |
+   |---|---|---|
+   | `IMAGE_NAME` | `aws-voting` | Container image name (built from Dockerfile) |
+   | `DOCKERHUB_USERNAME` | *(blank)* | Auto-detected from Jenkins credentials, or override with your username |
+   | `DOCKERHUB_CREDENTIALS_ID` | `dockerhub-credentials` | Jenkins credentials ID for Docker Hub |
+   | `PUSH_TO_DOCKERHUB` | `false` | Check `true` to push tagged image to Docker Hub |
+   | `DEPLOY_TO_K8S` | `true` | Deploy image directly to Kubernetes pods |
+   | `K8S_NAMESPACE` | `votesecure` | Target Kubernetes namespace |
+3. Click **Build**.
+
+---
+
+##### Step 7: Automated Execution & Verification
+Watch the live pipeline execution stages:
+1. **📥 Checkout Code**: Clones the latest commit from Git.
+2. **⚙️ Resolve Configuration**: Resolves image names without hardcoded usernames.
+3. **🔍 Lint & PHP Syntax Check**: Validates syntax across all PHP files via `php -l`.
+4. **🐳 Build Docker Image**: Multi-stage compilation creates `aws-voting:${BUILD_NUMBER}` and `aws-voting:latest`.
+5. **🛡️ Security Scan (Trivy)**: Scans container image for vulnerabilities.
+6. **📤 Push to Docker Hub** *(If enabled)*: Authenticates and publishes images.
+7. **☸️ Deploy to Kubernetes Pods**: Executes rolling update (`kubectl set image deployment/votesecure-app app=aws-voting:${BUILD_NUMBER} -n votesecure`) and monitors rollout completion with zero downtime (`maxSurge: 1, maxUnavailable: 0`).
+
+---
+
+### 2. 🔄 GitHub Actions CI/CD Pipeline Setup & Deployment
+
+The included GitHub Actions workflow (`.github/workflows/deploy.yml`) provides instant continuous deployment straight to an AWS EC2 instance on every push to `main`.
+
+```text
+[ Git Push to Main ] ──▶ [ Lint & Test ] ──▶ [ Docker Build ] ──▶ [ Push to Docker Hub ] ──▶ [ SSH Deploy to EC2 ] ──▶ [ Health Probe HTTP 200 ]
+```
+
+#### 📋 Step-by-Step GitHub Actions Setup Guide:
+
+##### Step 1: Fork or Clone Repository to GitHub
+Ensure you have the repository on your GitHub account:
+```bash
+git clone https://github.com/Vaibhavmungal/aws-voting-advanced.git
+```
+
+---
+
+##### Step 2: Prepare the Target AWS EC2 Instance
+SSH into your AWS EC2 instance and set up the deployment directory:
+```bash
+# Connect to your EC2 instance
+ssh -i <your-key.pem> ubuntu@<your-ec2-ip>
+
+# Ensure Docker is installed and running
+sudo apt update && sudo apt install -y docker.io docker-compose-v2
+sudo usermod -aG docker ubuntu
+
+# Clone the repository into /opt or home directory
+sudo mkdir -p /opt/aws-voting-advanced
+sudo chown -R ubuntu:ubuntu /opt/aws-voting-advanced
+git clone https://github.com/Vaibhavmungal/aws-voting-advanced.git /opt/aws-voting-advanced
+cd /opt/aws-voting-advanced
+cp .env.example .env
+```
+
+---
+
+##### Step 3: Add GitHub Secrets to Repository
+Navigate to your GitHub repository: **Settings > Secrets and variables > Actions > New repository secret**, and add the following 5 secrets:
+
+| Secret Name | Required | Description | Example Value |
 |---|---|---|---|
-| [**1. Docker Compose**](#1--docker-compose-deployment-recommended) | Local testing, single-server production (EC2 / VPS) | 2 minutes | ⭐ Easy |
-| [**2. AWS Terraform IaC**](#2-🏗️-aws-cloud-deployment-via-terraform) | High-availability cloud infrastructure (VPC, Bastion, RDS, EC2) | 10 minutes | ⭐⭐⭐ Advanced |
-| [**3. Kubernetes Pods**](#3-☸️-kubernetes-k8s-pod-deployment-zero-downtime) | Cloud-native container clusters (EKS, Minikube, K3s) | 3 minutes | ⭐⭐ Intermediate |
-| [**4. Jenkins CI/CD**](#4-🏗️-jenkins-cicd-automated-pipeline) | Automated building, security scanning & k8s pod rollouts | Automated | ⭐⭐ Intermediate |
-| [**5. GitHub Actions**](#5-🔄-github-actions-cicd-pipeline) | Continuous delivery to server on Git push | Automated | ⭐⭐ Intermediate |
-| [**6. LAMP / XAMPP**](#6-💻-traditional-lamp--xampp-setup) | Bare-metal local PHP development without containers | 5 minutes | ⭐ Easy |
+| `DOCKERHUB_USERNAME` | Yes | Your Docker Hub username | `your-dockerhub-user` |
+| `DOCKERHUB_TOKEN` | Yes | Docker Hub Personal Access Token (Read & Write) | `dckr_pat_xxxx` |
+| `DEPLOY_HOST` | Yes | Public IPv4 or DNS of your AWS EC2 server | `54.210.12.34` |
+| `DEPLOY_USER` | Yes | SSH user on your EC2 instance | `ubuntu` |
+| `DEPLOY_SSH_KEY` | Yes | Entire private SSH key (`.pem`) used to connect to EC2 | `-----BEGIN RSA PRIVATE KEY-----...` |
+| `DEPLOY_PATH` | Optional | Path to project folder on EC2 server | `/opt/aws-voting-advanced` (default) |
+
+> 💡 **Tip for `DEPLOY_SSH_KEY`:** Copy the entire content of your `.pem` key file including `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----`.
 
 ---
 
-### 1. 🐳 Docker Compose Deployment (Recommended)
-
-The fastest and most reliable way to run the entire stack (PHP App + MySQL 8.0 + phpMyAdmin) with zero configuration required.
-
-#### Prerequisites:
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS) or Docker Engine + Docker Compose Plugin (Linux).
-
-#### Step-by-Step Instructions:
-
+##### Step 4: Trigger the Pipeline
+The workflow triggers automatically whenever code is pushed to the `main` branch:
 ```bash
-# Step 1: Clone the repository
-git clone https://github.com/Vaibhavmungal/aws-voting-advanced.git
-cd aws-voting-advanced
-
-# Step 2: (Optional) Prepare Environment Variables
-# The compose file includes sensible defaults, but you can customize .env if needed:
-cp .env.example .env
-
-# Step 3: Launch the container stack
-# For Local Development (includes phpMyAdmin at :8081):
-docker compose up -d
-
-# OR For Production Server (optimized multi-stage build, no phpMyAdmin):
-docker compose -f docker-compose.prod.yml up -d --build
+git add .
+git commit -m "feat: updated election portal"
+git push origin main
 ```
-
-#### Step 4: Verify Deployment:
-```bash
-# Check container status (should show 'healthy')
-docker ps
-
-# Test application health endpoint
-curl http://localhost:8080/health.php
-```
-
-#### Step 5: Access Application:
-- **VoteSecure App:** [http://localhost:8080](http://localhost:8080)
-- **Admin Panel:** [http://localhost:8080/admin/login.php](http://localhost:8080/admin/login.php) (User: `Vaibhav`, Pass: `1234`)
-- **phpMyAdmin (Dev only):** [http://localhost:8081](http://localhost:8081)
-- **Health Check:** [http://localhost:8080/health.php](http://localhost:8080/health.php)
-
-#### Useful Docker Commands:
-```bash
-# View live application logs
-docker compose logs -f app
-
-# Open a shell inside the running container
-docker compose exec app bash
-
-# Stop and remove all containers
-docker compose down
-```
+You can also trigger it manually anytime under **GitHub > Actions > VoteSecure CI/CD Pipeline > Run workflow**.
 
 ---
 
-### 2. 🏗️ AWS Cloud Deployment via Terraform
-
-Automate the complete AWS production infrastructure provisioning using enterprise-grade modular Terraform.
-
-#### Architecture Created:
-- **Custom VPC** (`10.0.0.0/16`) with DNS support and Internet Gateway.
-- **Public Subnet** (`10.0.1.0/24`) for Bastion Host & NAT Gateway.
-- **Private App Subnet** (`10.0.2.0/24`) for EC2 Docker Application Server.
-- **Private DB Subnets** (`10.0.3.0/24`, `10.0.4.0/24`) spanning 2 Availability Zones for RDS Multi-AZ MySQL.
-- **Bastion Host** (SSH Jump Server) in the public subnet.
-- **Strict Security Groups** enforcing least privilege access.
-
-#### Prerequisites:
-- [AWS CLI](https://aws.amazon.com/cli/) installed and authenticated (`aws configure`).
-- [Terraform v1.5+](https://developer.hashicorp.com/terraform/install) installed.
-- An existing EC2 Key Pair in your AWS target region (e.g. `votesecure-key`).
-
-#### Step-by-Step Instructions:
-
-```bash
-# Step 1: Navigate to the terraform directory
-cd terraform
-
-# Step 2: Initialize Terraform plugins and modules
-terraform init
-
-# Step 3: Create your terraform variable configuration
-cp terraform.tfvars.example terraform.tfvars
-```
-
-Edit `terraform.tfvars` with your settings:
-```hcl
-aws_region    = "ap-south-1"          # Your desired AWS region
-key_name      = "votesecure-key"      # Your AWS EC2 Key Pair name
-my_ip         = "YOUR_PUBLIC_IP/32"   # Your public IP for secure SSH access
-db_password   = "YourStrongPassword!" # Production RDS password
-enable_rds    = true                  # Set to false to run MySQL inside EC2 Docker
-```
-
-```bash
-# Step 4: Preview execution plan
-terraform plan
-
-# Step 5: Provision the complete AWS infrastructure
-terraform apply -auto-approve
-```
-
-#### Step 6: Access Deployed Resources:
-Once complete, Terraform outputs your endpoints:
-```bash
-Apply complete! Resources: 24 added, 0 changed, 0 destroyed.
-
-Outputs:
-app_url          = "http://<ec2-public-ip-or-dns>"
-bastion_ssh      = "ssh -i <your-key.pem> ec2-user@<bastion-ip>"
-db_endpoint      = "<rds-endpoint>:3306"
-```
-
-#### Connecting via Bastion Jump Host:
-```bash
-# SSH into private application instance through Bastion host
-ssh -i <your-key.pem> -J ec2-user@<bastion-ip> ubuntu@<app-private-ip>
-```
-
-#### Teardown AWS Resources:
-```bash
-terraform destroy -auto-approve
-```
-
-> 📖 **Deep Dive:** See [terraform/README.md](terraform/README.md) for full module documentation.
+##### Step 5: What Happens Automatically
+1. **GitHub Runner**: Spawns an Ubuntu runner and checks out the code.
+2. **PHP Validation**: Runs `php -l` syntax checking on all PHP scripts.
+3. **Docker Buildx**: Builds an optimized production container image.
+4. **Publish to Hub**: Pushes images tagged with `:latest` and `:sha-<git_commit>`.
+5. **Zero-Downtime Deployment**: SSHs into your AWS EC2 instance, pulls the updated image, runs `scripts/deploy.sh`, and validates the `/health.php` endpoint returns HTTP 200 before completing.
 
 ---
 
-### 3. ☸️ Kubernetes (k8s) Pod Deployment (Zero-Downtime)
-
-Deploy VoteSecure into a Kubernetes cluster with multi-pod replication, ConfigMaps, Secrets, persistent volumes, and rolling update strategy.
-
-#### Architecture:
-- **Namespace:** `votesecure`
-- **Replicas:** 2 pods with `RollingUpdate` (`maxSurge: 1`, `maxUnavailable: 0`).
-- **Probes:** Automated Liveness (`/health.php`) and Readiness probes.
-- **Service:** Type `LoadBalancer` mapping port `80` to container port `80`.
-
-#### Prerequisites:
-- `kubectl` CLI configured to an active cluster (EKS, Minikube, Kind, or K3s).
-
-#### Step-by-Step Instructions:
-
+##### Step 6: Verify Live Deployment
+Test your deployment immediately in the browser or via curl:
 ```bash
-# Step 1: Verify cluster connectivity
-kubectl cluster-info
-
-# Step 2: Run automated deployment script
-# Syntax: ./scripts/deploy-k8s.sh [<image_tag>] [<namespace>]
-./scripts/deploy-k8s.sh
-
-# Or specify a custom container image and namespace:
-./scripts/deploy-k8s.sh aws-voting:latest votesecure
+# Verify container is healthy
+curl http://<your-ec2-ip>/health.php
+# Expected: {"status":"healthy","database":"connected","timestamp":...}
 ```
-
-#### Manual Deployment via `kubectl`:
-```bash
-# 1. Apply Kubernetes manifests
-kubectl apply -f k8s/votesecure.yaml
-
-# 2. Trigger zero-downtime rolling update
-kubectl set image deployment/votesecure-app app=aws-voting:latest -n votesecure
-
-# 3. Monitor rollout progress
-kubectl rollout status deployment/votesecure-app -n votesecure --timeout=180s
-
-# 4. View active pods and service endpoints
-kubectl get pods -n votesecure -o wide
-kubectl get svc -n votesecure
-```
-
-#### Accessing Locally (Port Forwarding):
-```bash
-kubectl port-forward svc/votesecure-service 8080:80 -n votesecure
-# Access via browser at http://localhost:8080
-```
-
----
-
-### 4. 🏗️ Jenkins CI/CD Automated Pipeline
-
-VoteSecure includes a **universal Declarative Jenkins Pipeline** ([Jenkinsfile](Jenkinsfile)) that automatically builds, tests, and deploys the application.
-
-```
-[ Checkout Code ] ──▶ [ Resolve Targets ] ──▶ [ PHP Syntax Lint ] ──▶ [ Auto Build Image ] ──▶ [ Trivy Scan ] ──▶ [ Optional Hub Push ] ──▶ [ Deploy to K8s Pods ]
-```
-
-#### Features:
-- **Zero Hardcoded Usernames**: Builds automatically from the local `Dockerfile`.
-- **Universal Docker Hub Support**: If you provide Docker Hub credentials in Jenkins, it automatically pushes to your account; if omitted, it deploys the locally built image to Kubernetes pods directly.
-- **Zero-Downtime Kubernetes Deployment**: Executes `kubectl set image` and monitors `kubectl rollout status`.
-
-#### Step-by-Step Jenkins Setup:
-1. **(Optional) Add Docker Hub Credentials**:
-   - Navigate to **Manage Jenkins > Credentials > System > Global credentials > Add Credentials**.
-   - Kind: **Username with password** | **ID**: `dockerhub-credentials`.
-2. **Create Pipeline Job**:
-   - Create **New Item > Pipeline**.
-   - Under **Pipeline Definition**, select **Pipeline script from SCM**.
-   - SCM: **Git** | Repository URL: `https://github.com/<your-username>/aws-voting-advanced.git`.
-   - Script Path: `Jenkinsfile`.
-3. **Run Pipeline**:
-   - Click **Build with Parameters** (or **Build Now**).
-   - Parameters available:
-     - `IMAGE_NAME`: Container image name (default: `aws-voting`).
-     - `PUSH_TO_DOCKERHUB`: Set `true` to push to your Docker Hub repository.
-     - `DEPLOY_TO_K8S`: Set `true` to roll out directly to Kubernetes pods.
-     - `K8S_NAMESPACE`: Target Kubernetes namespace (default: `votesecure`).
-
----
-
-### 5. 🔄 GitHub Actions CI/CD Pipeline
-
-The included GitHub Actions workflow (`.github/workflows/deploy.yml`) automates building and deployment on push to `main`.
-
-#### How It Works:
-1. **Lint & Test**: Runs syntax verification across all PHP files.
-2. **Build Docker Image**: Builds an optimized production container image.
-3. **Push to Docker Hub**: Publishes images tagged with `:latest` and `:sha-<commit>`.
-4. **Deploy to Server**: SSHs into your AWS EC2 instance and triggers `scripts/deploy.sh`.
-
-#### Required GitHub Secrets:
-Set these under **Repository Settings > Secrets and variables > Actions**:
-| Secret Name | Description | Example |
-|---|---|---|
-| `DOCKERHUB_USERNAME` | Your Docker Hub account username | `your-docker-username` |
-| `DOCKERHUB_TOKEN` | Docker Hub Access Token | `dckr_pat_xxx` |
-| `DEPLOY_HOST` | Server IPv4 address | `54.210.12.34` |
-| `DEPLOY_USER` | SSH Username | `ubuntu` or `ec2-user` |
-| `DEPLOY_SSH_KEY` | Private SSH Key (`.pem`) | `-----BEGIN RSA PRIVATE KEY-----...` |
-
----
-
-### 6. 💻 Traditional LAMP / XAMPP Setup
-
-If you prefer running without Docker on bare-metal Apache and MySQL:
-
-```bash
-# Step 1: Clone the repository into your web root
-# For XAMPP Windows: C:/xampp/htdocs/aws-voting-advanced
-# For Ubuntu Linux:   /var/www/html/aws-voting-advanced
-git clone https://github.com/Vaibhavmungal/aws-voting-advanced.git
-
-# Step 2: Database Setup
-# Open MySQL CLI or phpMyAdmin and run:
-mysql -u root -p -e "CREATE DATABASE aws_voting;"
-mysql -u root -p aws_voting < database/aws_voting.sql
-
-# Step 3: Configure Environment
-cp .env.example .env
-```
-
-Edit `.env` with your local database credentials:
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASS=your_mysql_password
-DB_NAME=aws_voting
-APP_NAME=VoteSecure
-ALLOWED_EMAIL_DOMAIN=all
-APP_URL=http://localhost/aws-voting-advanced
-```
-
-```bash
-# Step 4: Fix File Permissions (Linux)
-chown -R www-data:www-data /var/www/html/aws-voting-advanced/
-chmod -R 777 /var/www/html/aws-voting-advanced/uploads/
-```
-
-#### Step 5: Access the Application:
-- Landing Page: `http://localhost/aws-voting-advanced/`
-- Admin Login: `http://localhost/aws-voting-advanced/admin/login.php`
-- Voter Login: `http://localhost/aws-voting-advanced/voter/login.php`
+- **Live Voting Portal:** `http://<your-ec2-ip>/`
+- **Admin Panel:** `http://<your-ec2-ip>/admin/login.php` (User: `Vaibhav`, Pass: `1234`)
 
 ---
 
