@@ -41,6 +41,6 @@ db_name            = "aws_voting"
 db_username        = "voting_user"
 db_password        = "VotingSecureSecret2026!"
 
-# Docker Hub Image to deploy
-docker_image = "vaibhavmungal/aws-voting"
+# Docker Image to deploy
+docker_image = "aws-voting"
 image_tag    = "latest"

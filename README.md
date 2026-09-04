@@ -157,9 +157,9 @@ To enable automated Docker Hub pushing and AWS deployment, add the following sec
 
 | Secret Name | Description | Example |
 |---|---|---|
-| `DOCKERHUB_USERNAME` | Your Docker Hub account username | `vaibhavmungal` |
+| `DOCKERHUB_USERNAME` | Your Docker Hub account username | `your-docker-username` |
 | `DOCKERHUB_TOKEN` | Docker Hub Personal Access Token (Read & Write) | `dckr_pat_xxx` |
-| `DOCKERHUB_REPO` *(Optional)* | Custom Docker Hub repo name | `vaibhavmungal/aws-voting` |
+| `DOCKERHUB_REPO` *(Optional)* | Custom Docker Hub repo name | `your-docker-username/aws-voting` |
 | `DEPLOY_HOST` | AWS EC2 Public IPv4 or DNS | `54.210.12.34` |
 | `DEPLOY_USER` | EC2 SSH username | `ubuntu` or `ec2-user` |
 | `DEPLOY_SSH_KEY` | Private SSH key (`.pem`) used to connect to EC2 | `-----BEGIN RSA PRIVATE KEY-----...` |

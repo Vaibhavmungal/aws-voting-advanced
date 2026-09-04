@@ -81,7 +81,7 @@ variable "db_name" {
 variable "docker_image" {
   description = "Docker image repository"
   type        = string
-  default     = "vaibhavmungal/aws-voting"
+  default     = "aws-voting"
 }
 
 variable "image_tag" {

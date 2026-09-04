@@ -1,6 +1,9 @@
 services:
   app:
-    image: ${DOCKERHUB_IMAGE:-vaibhavmungal/aws-voting}:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${DOCKER_IMAGE:-aws-voting}:${IMAGE_TAG:-latest}
     container_name: votesecure_prod_app
     restart: always
     ports:

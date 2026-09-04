@@ -61,7 +61,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: vaibhavmungal/aws-voting:latest
+          image: aws-voting:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

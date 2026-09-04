@@ -124,9 +124,9 @@ variable "db_password" {
 # ------------------------------------------------------------------------------
 
 variable "docker_image" {
-  description = "Docker Hub repository image to run"
+  description = "Docker repository image to run"
   type        = string
-  default     = "vaibhavmungal/aws-voting"
+  default     = "aws-voting"
 }
 
 variable "image_tag" {
