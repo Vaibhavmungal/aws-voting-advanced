@@ -388,6 +388,54 @@ The AWS cloud deployment utilizes a battle-tested **Multi-AZ 3-Tier Enterprise A
 
 ---
 
+### 🛠️ Where & How to Run Terraform Commands (IaC Provisioning)
+
+> **📁 Working Directory**: All Terraform commands **MUST** be executed inside the [`terraform/`](terraform/) folder of this repository.
+
+You can run Terraform from either:
+1. **Your Local Computer** (Windows PowerShell, CMD, Mac Terminal, or Linux) with the AWS CLI and Terraform installed.
+2. **An AWS EC2 Management Instance** (Ubuntu 24.04) running Terraform as installed in [Section 8 above](#8-️-hashicorp-terraform--aws-cli-v2-ubuntu-2404).
+
+#### 📋 Step-by-Step Terraform Execution:
+
+```bash
+# Step 1: Open your terminal and navigate into the terraform directory
+cd terraform
+
+# Step 2: Configure your AWS credentials (if not already done)
+aws configure
+# AWS Access Key ID [None]: <YOUR_ACCESS_KEY>
+# AWS Secret Access Key [None]: <YOUR_SECRET_KEY>
+# Default region name [None]: ap-south-1
+# Default output format [None]: json
+
+# Step 3: Create your personal variable configuration file
+cp terraform.tfvars.example terraform.tfvars
+
+# (Optional) Edit terraform.tfvars to set your EC2 key pair name and region:
+# nano terraform.tfvars  (or notepad terraform.tfvars on Windows)
+
+# Step 4: Initialize Terraform (downloads AWS provider & links modules)
+terraform init
+
+# Step 5: Validate syntax and preview the 24 AWS resources to be created
+terraform validate
+terraform plan
+
+# Step 6: Provision all AWS infrastructure (VPC, Subnets, Bastion, EC2, RDS)
+terraform apply -auto-approve
+
+# Step 7: View all provisioned IPs, endpoints, and SSH jump commands
+terraform output
+
+# 🧹 When finished testing, tear down all AWS resources to avoid charges:
+terraform destroy -auto-approve
+```
+
+> 📖 For advanced module details, zero-trust architecture, and variables breakdown, see the dedicated [terraform/README.md](terraform/README.md).
+
+---
+
 ## 🚀 Automated CI/CD Deployment Guide (Step-by-Step Setup)
 
 VoteSecure features two enterprise-grade continuous integration and continuous deployment (CI/CD) pipelines designed for automated testing, container packaging, security scanning, and zero-downtime rollouts:
