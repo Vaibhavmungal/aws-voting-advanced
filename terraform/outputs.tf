@@ -1,9 +1,9 @@
 # ==============================================================================
-# Outputs & Connection Details
+# Root Outputs & Connection Details
 # ==============================================================================
 
 locals {
-  app_ip = var.app_in_private_subnet ? aws_instance.web.private_ip : (var.enable_elastic_ip ? aws_eip.web_eip[0].public_ip : aws_instance.web.public_ip)
+  app_ip = module.compute.public_ip != null && module.compute.public_ip != "" ? module.compute.public_ip : module.compute.private_ip
 }
 
 output "app_url" {
@@ -12,44 +12,45 @@ output "app_url" {
 }
 
 output "app_ip" {
-  description = "IP address of the application server (Private if app_in_private_subnet=true, Public otherwise)"
+  description = "Public or Private IP address of the application server"
   value       = local.app_ip
 }
 
 output "app_private_ip" {
   description = "Internal private IPv4 of the VoteSecure application server"
-  value       = aws_instance.web.private_ip
+  value       = module.compute.private_ip
 }
 
 # Bastion Jump Host Outputs
 output "bastion_public_ip" {
   description = "Static Public IPv4 address of the Bastion Jump Host"
-  value       = var.enable_bastion ? aws_eip.bastion_eip[0].public_ip : "Bastion is disabled"
+  value       = var.enable_bastion ? module.bastion[0].public_ip : "Bastion is disabled"
 }
 
 output "bastion_ssh_command" {
   description = "Command to SSH directly into the Bastion Jump Host"
-  value       = (var.enable_bastion && var.ssh_key_name != "") ? "ssh -i ~/.ssh/${var.ssh_key_name}.pem ubuntu@${aws_eip.bastion_eip[0].public_ip}" : "Configure ssh_key_name in terraform.tfvars"
+  value       = (var.enable_bastion && var.ssh_key_name != "") ? "ssh -i ~/.ssh/${var.ssh_key_name}.pem ubuntu@${module.bastion[0].public_ip}" : "Configure ssh_key_name in terraform.tfvars"
 }
 
 output "jump_box_ssh_to_app" {
   description = "Secure ProxyJump command to SSH into App server via Bastion"
-  value       = (var.enable_bastion && var.ssh_key_name != "") ? "ssh -J ubuntu@${aws_eip.bastion_eip[0].public_ip} -i ~/.ssh/${var.ssh_key_name}.pem ubuntu@${aws_instance.web.private_ip}" : "N/A"
+  value       = (var.enable_bastion && var.ssh_key_name != "") ? "ssh -J ubuntu@${module.bastion[0].public_ip} -i ~/.ssh/${var.ssh_key_name}.pem ubuntu@${module.compute.private_ip}" : "N/A"
 }
 
 # Database Outputs
 output "rds_endpoint" {
   description = "Connection endpoint of the AWS RDS MySQL database"
-  value       = var.enable_rds ? aws_db_instance.mysql[0].endpoint : "N/A (MySQL is running containerized on EC2)"
+  value       = var.enable_rds ? module.database[0].endpoint : "N/A (MySQL is running containerized on EC2 via Docker Compose)"
 }
 
-# Subnet IDs Overview
-output "subnets_summary" {
-  description = "IDs of all allocated subnets by tier"
+# Network Summary
+output "network_summary" {
+  description = "IDs of all allocated subnets and VPC"
   value = {
-    public_subnets      = [aws_subnet.public_1.id, aws_subnet.public_2.id]
-    bastion_subnet      = aws_subnet.bastion.id
-    private_app_subnets = [aws_subnet.private_app_1.id, aws_subnet.private_app_2.id]
-    private_db_subnets  = [aws_subnet.private_db_1.id, aws_subnet.private_db_2.id]
+    vpc_id              = module.vpc.vpc_id
+    public_subnets      = module.vpc.public_subnet_ids
+    bastion_subnet      = module.vpc.bastion_subnet_id
+    private_app_subnets = module.vpc.private_app_subnet_ids
+    private_db_subnets  = module.vpc.private_db_subnet_ids
   }
 }

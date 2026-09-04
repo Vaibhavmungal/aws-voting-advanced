@@ -1,8 +1,7 @@
 # ==============================================================================
-# AWS EC2 Compute Instance & Elastic IP
+# Compute Module — VoteSecure EC2 App Server
 # ==============================================================================
 
-# Lookup latest official Ubuntu 22.04 LTS AMI
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # Canonical
@@ -18,13 +17,12 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Primary Application Server
-resource "aws_instance" "web" {
+resource "aws_instance" "app" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
   key_name                    = var.ssh_key_name != "" ? var.ssh_key_name : null
-  subnet_id                   = var.app_in_private_subnet ? aws_subnet.private_app_1.id : aws_subnet.public_1.id
-  vpc_security_group_ids      = [aws_security_group.web_sg.id]
+  subnet_id                   = var.subnet_id
+  vpc_security_group_ids      = [var.security_group_id]
   associate_public_ip_address = var.app_in_private_subnet ? false : true
 
   root_block_device {
@@ -34,16 +32,15 @@ resource "aws_instance" "web" {
     delete_on_termination = true
 
     tags = {
-      Name = "${var.project_name}-${var.environment}-root-volume"
+      Name = "${var.project_name}-${var.environment}-app-disk"
     }
   }
 
-  # Cloud-Init automated bootstrap script
   user_data = templatefile("${path.module}/scripts/user_data.sh.tpl", {
-    db_host      = var.enable_rds ? aws_db_instance.mysql[0].address : "db"
-    db_port      = var.enable_rds ? aws_db_instance.mysql[0].port : 3306
-    db_user      = var.db_username
-    db_pass      = var.db_password
+    db_host      = var.db_host
+    db_port      = var.db_port
+    db_user      = var.db_user
+    db_pass      = var.db_pass
     db_name      = var.db_name
     docker_image = var.docker_image
     image_tag    = var.image_tag
@@ -57,13 +54,12 @@ resource "aws_instance" "web" {
   }
 }
 
-# Optional Elastic IP for static public IPv4 (applicable when instance is in public subnet)
-resource "aws_eip" "web_eip" {
+resource "aws_eip" "app_eip" {
   count    = (var.enable_elastic_ip && !var.app_in_private_subnet) ? 1 : 0
-  instance = aws_instance.web.id
+  instance = aws_instance.app.id
   domain   = "vpc"
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-eip"
+    Name = "${var.project_name}-${var.environment}-app-eip"
   }
 }

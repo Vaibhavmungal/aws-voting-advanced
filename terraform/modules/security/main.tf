@@ -1,14 +1,41 @@
 # ==============================================================================
-# Security Groups & Firewall Rules
+# Security Module — Chained Firewalls (Bastion -> App -> Database)
 # ==============================================================================
 
-# Security Group for Application Instance
-resource "aws_security_group" "web_sg" {
+# 1. Bastion Host Security Group
+resource "aws_security_group" "bastion" {
+  count       = var.enable_bastion ? 1 : 0
+  name        = "${var.project_name}-${var.environment}-bastion-sg"
+  description = "Allow SSH traffic to Bastion Jump Box from authorized CIDR"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "Allow SSH from administrator"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ssh_cidr]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-bastion-sg"
+  }
+}
+
+# 2. Application Server Security Group
+resource "aws_security_group" "web" {
   name        = "${var.project_name}-${var.environment}-web-sg"
   description = "Security group for VoteSecure Web Application"
-  vpc_id      = aws_vpc.votesecure_vpc.id
+  vpc_id      = var.vpc_id
 
-  # HTTP
   ingress {
     description = "Allow HTTP from anywhere"
     from_port   = 80
@@ -17,7 +44,6 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTPS
   ingress {
     description = "Allow HTTPS from anywhere"
     from_port   = 443
@@ -26,7 +52,6 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Application Port (8080)
   ingress {
     description = "Allow custom app port 8080"
     from_port   = 8080
@@ -35,17 +60,16 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # SSH: Securely chained via Bastion if enabled, else fallback to allowed CIDR
+  # SSH: Securely chained via Bastion if enabled, else allowed CIDR
   ingress {
     description     = "Allow SSH strictly from Bastion Jump Host"
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    security_groups = var.enable_bastion ? [aws_security_group.bastion_sg[0].id] : null
+    security_groups = var.enable_bastion ? [aws_security_group.bastion[0].id] : null
     cidr_blocks     = var.enable_bastion ? null : [var.allowed_ssh_cidr]
   }
 
-  # All Outbound
   egress {
     description = "Allow all outbound traffic"
     from_port   = 0
@@ -59,23 +83,21 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# Security Group for RDS MySQL Database (Strictly Isolated)
-resource "aws_security_group" "rds_sg" {
+# 3. RDS MySQL Security Group
+resource "aws_security_group" "rds" {
   count       = var.enable_rds ? 1 : 0
   name        = "${var.project_name}-${var.environment}-rds-sg"
   description = "Allow MySQL traffic strictly from App and Bastion security groups"
-  vpc_id      = aws_vpc.votesecure_vpc.id
+  vpc_id      = var.vpc_id
 
-  # MySQL from App Server
   ingress {
     description     = "Allow MySQL access from Web App SG"
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
-    security_groups = [aws_security_group.web_sg.id]
+    security_groups = [aws_security_group.web.id]
   }
 
-  # MySQL from Bastion Jump Host (for DB administration/tunneling)
   dynamic "ingress" {
     for_each = var.enable_bastion ? [1] : []
     content {
@@ -83,7 +105,7 @@ resource "aws_security_group" "rds_sg" {
       from_port       = 3306
       to_port         = 3306
       protocol        = "tcp"
-      security_groups = [aws_security_group.bastion_sg[0].id]
+      security_groups = [aws_security_group.bastion[0].id]
     }
   }
 
