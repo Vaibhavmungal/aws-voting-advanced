@@ -35,15 +35,15 @@ resource "aws_db_parameter_group" "mysql_params" {
 }
 
 resource "aws_db_instance" "mysql" {
-  count                  = var.enable_rds ? 1 : 0
-  identifier             = "${var.project_name}-${var.environment}-mysql"
-  engine                 = "mysql"
-  engine_version         = "8.0"
-  instance_class         = var.rds_instance_class
-  allocated_storage      = 20
-  max_allocated_storage  = 50
-  storage_type           = "gp3"
-  storage_encrypted      = true
+  count                 = var.enable_rds ? 1 : 0
+  identifier            = "${var.project_name}-${var.environment}-mysql"
+  engine                = "mysql"
+  engine_version        = "8.0"
+  instance_class        = var.rds_instance_class
+  allocated_storage     = 20
+  max_allocated_storage = 50
+  storage_type          = "gp3"
+  storage_encrypted     = true
 
   db_name  = var.db_name
   username = var.db_username
