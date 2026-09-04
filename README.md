@@ -22,22 +22,27 @@ VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online
 
 ## 📋 Required Software & Version Matrix
 
-Below are the recommended and minimum supported versions for all technologies, runtimes, container engines, and DevOps tools used across VoteSecure:
+Below are the recommended and minimum supported versions along with official direct download links for all technologies, runtimes, container engines, and DevOps tools used across VoteSecure:
 
-| Category | Software / Tool | Recommended Version | Minimum Version | Purpose in VoteSecure |
-|---|---|---|---|---|
-| **Container Engine** | **Docker Engine** | `25.0+` / `24.0+` | `20.10+` | Container runtime packaging PHP app and services |
-| **Orchestration** | **Docker Compose** | `v2.24+` / `v2.20+` | `v2.0.0+` | Multi-container stack orchestration (App + MySQL + phpMyAdmin) |
-| **CI/CD Server** | **Jenkins** | `2.426+` (LTS) | `2.400+` | Automated building, linting, Trivy security scan, and k8s pod rollouts |
-| **Cloud Native** | **Kubernetes (k8s)** | `v1.28+` / `v1.29+` | `v1.24+` | Container pod scaling, self-healing, and zero-downtime rolling updates |
-| **K8s CLI** | **kubectl** | `v1.28+` | `v1.24+` | Command-line control plane client for cluster deployments |
-| **Cloud IaC** | **Terraform** | `v1.7+` | `v1.5.0+` | Automated AWS infrastructure (VPC, Bastion, EC2, RDS) |
-| **Cloud Provider** | **AWS CLI** | `v2.15+` | `v2.0+` | AWS command-line authentication and configuration |
-| **Backend Runtime**| **PHP** | `8.2+` / `8.3` | `8.1+` | Core backend logic (`mysqli`, `pdo`, `mbstring`, `curl`) |
-| **Database** | **MySQL Server** | `8.0+` | `8.0.28+` | Relational database engine for elections, candidates, voters & votes |
-| **Web Server** | **Apache HTTP Server** | `2.4.57+` | `2.4+` | Web server with `mod_rewrite` URL routing |
-| **VCS** | **Git** | `2.40+` | `2.30+` | Source code versioning and pipeline checkout |
-| **Security Scanner**| **Trivy** *(Optional)* | `0.48+` | `0.38+` | Container vulnerability assessment in CI/CD pipeline |
+| Category | Software / Tool | Recommended Version | Minimum Version | Official Download Link | Purpose in VoteSecure |
+|---|---|---|---|---|---|
+| **Container Engine** | **Docker Engine / Desktop** | `25.0+` / `24.0+` | `20.10+` | [Download Docker](https://www.docker.com/products/docker-desktop/) | Packaging PHP app and isolated service runtime |
+| **Orchestration** | **Docker Compose** | `v2.24+` / `v2.20+` | `v2.0.0+` | [Download Compose](https://docs.docker.com/compose/install/) | Multi-container stack (App + MySQL + phpMyAdmin) |
+| **CI/CD Server** | **Jenkins** | `2.426+` (LTS) | `2.400+` | [Download Jenkins](https://www.jenkins.io/download/) | CI/CD automation: lint, test, Trivy scan, and k8s pod rollout |
+| **Cloud Native** | **Kubernetes (k8s)** | `v1.28+` / `v1.29+` | `v1.24+` | [Download Minikube/K8s](https://kubernetes.io/docs/tasks/tools/) | Container pod scaling, self-healing, and rolling updates |
+| **K8s CLI** | **kubectl** | `v1.28+` | `v1.24+` | [Download kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | Command-line control plane client for cluster deployments |
+| **Cloud IaC** | **Terraform** | `v1.7+` | `v1.5.0+` | [Download Terraform](https://developer.hashicorp.com/terraform/install) | Automated AWS infrastructure (VPC, Bastion, EC2, RDS) |
+| **Cloud Provider** | **AWS CLI** | `v2.15+` | `v2.0+` | [Download AWS CLI](https://aws.amazon.com/cli/) | AWS command-line authentication and configuration |
+| **Backend Runtime**| **PHP** | `8.2+` / `8.3` | `8.1+` | [Download PHP](https://www.php.net/downloads) | Core backend logic (`mysqli`, `pdo`, `mbstring`, `curl`) |
+| **Database** | **MySQL Server** | `8.0+` | `8.0.28+` | [Download MySQL](https://dev.mysql.com/downloads/mysql/) | Relational database (elections, candidates, voters & votes) |
+| **Web Server** | **Apache HTTP Server** | `2.4.57+` | `2.4+` | [Download Apache](https://httpd.apache.org/download.cgi) | Web server with `mod_rewrite` URL routing (or via [XAMPP](https://www.apachefriends.org/download.html)) |
+| **VCS** | **Git** | `2.40+` | `2.30+` | [Download Git](https://git-scm.com/downloads) | Source code versioning and pipeline checkout |
+| **Security Scanner**| **Trivy** *(Optional)* | `0.48+` | `0.38+` | [Download Trivy](https://github.com/aquasecurity/trivy/releases) | Container vulnerability assessment in CI/CD pipeline |
+
+> 💡 **Quick Install via Package Managers:**
+> - **Windows (Winget):** `winget install Docker.DockerDesktop Hashicorp.Terraform Amazon.AWSCLI Git.Git Kubernetes.kubectl`
+> - **macOS (Homebrew):** `brew install docker docker-compose terraform awscli kubectl git php mysql`
+> - **Ubuntu / Debian (APT):** `sudo apt update && sudo apt install -y docker.io docker-compose-v2 git php8.2 mysql-server`
 
 ---
 
