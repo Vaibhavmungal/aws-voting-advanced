@@ -1,8 +1,21 @@
-# 🗳️ VoteSecure — Advanced Online Voting System
+# 🗳️ VoteSecure — Advanced Online Voting Platform
 
-VoteSecure is a modern, secure, and responsive PHP-based online voting platform built for **colleges, NGOs, and small organisations**. It is split into two distinct panels: an **Admin Panel** for election management and a **Voter Panel** for secure ballot casting.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-777bb4?logo=php&logoColor=white)](https://www.php.net/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white)](https://www.docker.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479a1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online voting platform built for **colleges, universities, NGOs, clubs, and organisations**. It features an **Admin Panel** with real-time analytics for election management and a secure **Voter Panel** for authenticated ballot casting.
 
 > 🌐 **Live Demo:** [http://13.206.147.173/](http://13.206.147.173/)
+
+### 🔑 Default Credentials (Seed Data)
+| Portal | Access URL | Username / Email | Password | Access Level |
+|---|---|---|---|---|
+| **Admin Panel** | `/admin/login.php` | `Vaibhav` | `1234` | Full Election, Candidate & Voter Management |
+| **Voter Portal** | `/voter/login.php` | *(Register any account or use seeded accounts)* | *(set at signup)* | Ballot Casting |
+| **phpMyAdmin** *(Docker)* | `http://localhost:8081` | `voting_user` | `voting_secret` | Web Database GUI |
 
 ---
 
@@ -350,8 +363,25 @@ Email  +  Password  →  Dashboard
 
 ---
 
-## 👨‍💻 Developer
+## 👨‍💻 Developer & Maintainers
 
-**Vaibhav Mungal**
+**Vaibhav Mungal** — [GitHub](https://github.com/Vaibhavmungal)
 
-> *Built with ❤️, PHP, MySQL, and a lot of CSS variables. Deployed on AWS EC2. Suitable for college elections, NGO voting, and small organisational polls.*
+> *Built with ❤️, PHP, MySQL, and modern CSS variables. Designed for effortless deployment on Docker, AWS EC2, and Kubernetes.*
+
+---
+
+## 🤝 Contributing
+
+Contributions are warmly welcomed! VoteSecure is an open-source project and thrives on community feedback and code contributions.
+
+- Review our [Contributing Guide](CONTRIBUTING.md) to get started with our workflow and coding conventions.
+- Check out our [Code of Conduct](CODE_OF_CONDUCT.md) for community standards.
+- Feel free to open an issue or submit a pull request!
+
+---
+
+## 📄 License
+
+This project is open-source and licensed under the **[MIT License](LICENSE)**. You are free to use, modify, distribute, and integrate this software into your own college, organisation, or commercial projects.
+

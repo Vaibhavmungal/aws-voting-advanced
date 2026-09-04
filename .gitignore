@@ -1,11 +1,30 @@
+# Environment
 .env
+.env.*
+!.env.example
+
+# Candidate Uploads (Preserve avatars & sample photos)
 uploads/*
 !uploads/.gitkeep
-!uploads/default_avatar.png
-!uploads/placeholder_female.png
-!uploads/placeholder_male.png
-!uploads/male_1.png
-!uploads/male_2.png
-!uploads/male_3.png
-!uploads/male_4.png
+!uploads/*.png
+!uploads/*.jpg
+!uploads/*.jpeg
+
+# IDE & Editor Settings
 .vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs & Temporary Files
+*.log
+scratch/
