@@ -101,6 +101,59 @@ aws-voting-advanced/
 
 ---
 
+## 🐳 Docker Quickstart (Recommended)
+
+Run the entire application stack (PHP App + MySQL Database + phpMyAdmin) with a single command — zero manual configuration required!
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Vaibhavmungal/aws-voting-advanced.git
+cd aws-voting-advanced
+
+# 2. Start the full stack with Docker Compose
+docker compose up -d
+```
+
+### Accessing Containerized Services:
+| Service | URL | Default Credentials / Info |
+|---|---|---|
+| **VoteSecure App** | `http://localhost:8080` | Landing page, Voter & Admin portals |
+| **phpMyAdmin** | `http://localhost:8081` | Web database UI (Server: `db`, User: `voting_user`, Pass: `voting_secret`) |
+| **Health Check** | `http://localhost:8080/health.php` | Returns container & DB connection health in JSON |
+| **MySQL 8.0** | Port `3307` | Auto-seeds schema from `database/aws_voting.sql` |
+
+```bash
+# View live logs
+docker compose logs -f app
+
+# Stop the stack
+docker compose down
+```
+
+---
+
+## 🔄 CI/CD & Automated DevOps Deployment
+
+VoteSecure includes a production-grade GitHub Actions CI/CD pipeline (`.github/workflows/deploy.yml`) that automatically:
+1. **Lints & Validates**: Runs `php -l` across all PHP files to catch any syntax bugs before deployment.
+2. **Builds & Pushes**: Compiles the optimized multi-stage Docker image and pushes it to **Docker Hub** tagged with both `:latest` and the commit SHA (`:sha-<git_sha>`).
+3. **Automated Deployment**: SSHs into your **AWS EC2** instance / server and runs `scripts/deploy.sh` to pull the latest image and restart containers with minimal downtime.
+
+### 🔑 Setting Up GitHub Secrets
+To enable automated Docker Hub pushing and AWS deployment, add the following secrets in your GitHub repository (**Settings > Secrets and variables > Actions > Repository secrets**):
+
+| Secret Name | Description | Example |
+|---|---|---|
+| `DOCKERHUB_USERNAME` | Your Docker Hub account username | `vaibhavmungal` |
+| `DOCKERHUB_TOKEN` | Docker Hub Personal Access Token (Read & Write) | `dckr_pat_xxx` |
+| `DOCKERHUB_REPO` *(Optional)* | Custom Docker Hub repo name | `vaibhavmungal/aws-voting` |
+| `DEPLOY_HOST` | AWS EC2 Public IPv4 or DNS | `54.210.12.34` |
+| `DEPLOY_USER` | EC2 SSH username | `ubuntu` or `ec2-user` |
+| `DEPLOY_SSH_KEY` | Private SSH key (`.pem`) used to connect to EC2 | `-----BEGIN RSA PRIVATE KEY-----...` |
+| `DEPLOY_PATH` *(Optional)* | Project folder path on server | `/opt/aws-voting-advanced` (default) |
+
+---
+
 ## 🚀 Local Setup (XAMPP/WAMP)
 
 ### 1. Clone the Repository

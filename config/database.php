@@ -25,14 +25,15 @@ if (file_exists($env_file)) {
 }
 
 // --- Connection ------------------------------------------------------
-$db_host = $_ENV['DB_HOST'] ?? 'localhost';
-$db_user = $_ENV['DB_USER'] ?? 'root';
-$db_pass = $_ENV['DB_PASS'] ?? '';
-$db_name = $_ENV['DB_NAME'] ?? 'aws_voting';
+$db_host = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? 'localhost');
+$db_user = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? 'root');
+$db_pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : ($_ENV['DB_PASS'] ?? '');
+$db_name = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'aws_voting');
+$db_port = (int)(getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? 3306));
 
 try {
     // Disable strict error exceptions temporarily or catch them cleanly
-    $conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name);
+    $conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name, $db_port);
     if (!$conn) {
         die("❌ Database Connection Failed: " . mysqli_connect_error());
     }

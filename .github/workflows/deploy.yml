@@ -1,0 +1,140 @@
+name: CI/CD Pipeline — Build, Push to Docker Hub & Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Target environment to deploy"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - "production"
+          - "staging"
+
+env:
+  DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_REPO != '' && secrets.DOCKERHUB_REPO || 'vaibhavmungal/aws-voting' }}
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # 1. LINT & SYNTAX VALIDATION
+  # ----------------------------------------------------------------------------
+  lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli, pdo, pdo_mysql, gd
+
+      - name: Validate PHP Syntax across all files
+        run: |
+          echo "🔍 Linting all PHP files for syntax errors..."
+          find . -type f -name "*.php" -not -path "*/vendor/*" -exec php -l {} +
+          echo "✅ All PHP files passed syntax validation!"
+
+  # ----------------------------------------------------------------------------
+  # 2. DOCKER BUILD & PUSH TO DOCKER HUB
+  # ----------------------------------------------------------------------------
+  build-and-push:
+    name: Build & Push Docker Image
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Determine Docker Hub Credentials
+        id: auth-check
+        run: |
+          if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ] && [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "has_auth=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_auth=false" >> $GITHUB_OUTPUT
+            echo "⚠️ DOCKERHUB_USERNAME or DOCKERHUB_TOKEN secret is not set. Image will only be built, not pushed."
+          fi
+
+      - name: Log in to Docker Hub
+        if: steps.auth-check.outputs.has_auth == 'true' && github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker Metadata (Tags & Labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_REPO }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short,prefix=sha-
+            type=ref,event=branch
+            type=ref,event=tag
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ steps.auth-check.outputs.has_auth == 'true' && github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ----------------------------------------------------------------------------
+  # 3. DEPLOY TO AWS EC2 / PRODUCTION HOST
+  # ----------------------------------------------------------------------------
+  deploy:
+    name: Deploy to Production
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Deployment Secrets
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.DEPLOY_HOST }}" ] && [ -n "${{ secrets.DEPLOY_USER }}" ] && [ -n "${{ secrets.DEPLOY_SSH_KEY }}" ]; then
+            echo "deployable=true" >> $GITHUB_OUTPUT
+          else
+            echo "deployable=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  DEPLOY_HOST, DEPLOY_USER, or DEPLOY_SSH_KEY secret not found."
+            echo "ℹ️  To enable automated deployment, add DEPLOY_HOST, DEPLOY_USER, and DEPLOY_SSH_KEY to GitHub Repository Secrets."
+          fi
+
+      - name: Deploy via SSH to AWS EC2 / VPS
+        if: steps.check-secrets.outputs.deployable == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            set -e
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH || '/opt/aws-voting-advanced' }}"
+            echo "🚀 Connecting to server. Target path: $DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+            
+            # Export environment overrides if present
+            export DOCKERHUB_IMAGE="${{ env.DOCKERHUB_REPO }}"
+            export IMAGE_TAG="sha-${{ github.sha }}"
+            
+            # Run the deployment script
+            bash scripts/deploy.sh

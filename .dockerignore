@@ -1,0 +1,11 @@
+.git
+.github
+.gitignore
+.env
+.env.*
+.vscode/
+docker-compose*.yml
+Dockerfile*
+k8s/
+scripts/
+*.md

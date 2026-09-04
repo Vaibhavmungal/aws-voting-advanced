@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: votesecure
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: votesecure-config
+  namespace: votesecure
+data:
+  DB_HOST: "mysql-service"
+  DB_PORT: "3306"
+  DB_NAME: "aws_voting"
+  APP_NAME: "VoteSecure"
+  APP_URL: "http://votesecure.example.com"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: votesecure-secret
+  namespace: votesecure
+type: Opaque
+stringData:
+  DB_USER: "voting_user"
+  DB_PASS: "change_me_production_secret"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: votesecure-uploads-pvc
+  namespace: votesecure
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: votesecure-app
+  namespace: votesecure
+  labels:
+    app: votesecure
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: votesecure
+  template:
+    metadata:
+      labels:
+        app: votesecure
+    spec:
+      containers:
+        - name: app
+          image: vaibhavmungal/aws-voting:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          envFrom:
+            - configMapRef:
+                name: votesecure-config
+            - secretRef:
+                name: votesecure-secret
+          volumeMounts:
+            - name: uploads-volume
+              mountPath: /var/www/html/uploads
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health.php
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health.php
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+      volumes:
+        - name: uploads-volume
+          persistentVolumeClaim:
+            claimName: votesecure-uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: votesecure-service
+  namespace: votesecure
+spec:
+  type: LoadBalancer
+  selector:
+    app: votesecure
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
