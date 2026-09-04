@@ -43,34 +43,69 @@ Below are the recommended and minimum supported versions for all technologies, r
 
 ## ⚙️ How the Project Works (Step-by-Step Architecture & Lifecycle)
 
-VoteSecure connects administrators, voters, database engines, and automated DevOps infrastructure into a unified and secure online election system.
+VoteSecure connects administrators, voters, database engines, and automated DevOps infrastructure into a unified, secure online election system.
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                           VOTESECURE SYSTEM LIFECYCLE                        │
-└──────────────────────────────────────────────────────────────────────────────┘
+### 🎨 3D Interactive & Animated Architecture Diagram
 
-  1. ADMIN SETUP ──▶ 2. VOTER AUTH ──▶ 3. BOOTH CASTING ──▶ 4. LIVE AUDITING & RESULTS
-        │                  │                  │                         │
-  ┌───────────┐      ┌───────────┐      ┌───────────┐             ┌───────────┐
-  │ Create    │      │ Register/ │      │ Single-   │             │ Real-Time │
-  │ Elections │      │ Login     │      │ Ballot    │             │ Turnout   │
-  │ & Add     │      │ (Aadhar & │      │ Lock      │             │ Charts &  │
-  │ Candidates│      │ Password) │      │ (Atomic)  │             │ Export    │
-  └───────────┘      └───────────┘      └───────────┘             └───────────┘
-        │                  │                  │                         │
-        └──────────────────┴─────────┬────────┴─────────────────────────┘
-                                     ▼
-                      ┌─────────────────────────────┐
-                      │    MySQL 8.0 Database       │
-                      │  (Transactions & Relations) │
-                      └─────────────────────────────┘
-                                     ▲
-                                     │
-                      ┌─────────────────────────────┐
-                      │    DevOps & CI/CD Engine    │
-                      │  (Docker ➜ Jenkins ➜ K8s)   │
-                      └─────────────────────────────┘
+![VoteSecure 3D Cloud Architecture](assets/images/aws-architecture-3d.svg)
+
+```mermaid
+graph TD
+    classDef clientStyle fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef edgeStyle fill:#1e293b,stroke:#FF9900,stroke-width:2px,color:#FFB84D;
+    classDef dmzStyle fill:#0e2238,stroke:#0284c7,stroke-width:2px,color:#bae6fd;
+    classDef computeStyle fill:#170d2b,stroke:#a855f7,stroke-width:2px,color:#e9d5ff;
+    classDef dataStyle fill:#0b2119,stroke:#10b981,stroke-width:2px,color:#a7f3d0;
+    classDef devopsStyle fill:#1e1b4b,stroke:#ec4899,stroke-width:2px,color:#fbcfe8;
+
+    subgraph Step1["🪜 STEP 1: EDGE & INGRESS LAYER"]
+        Users["👥 Voters & Administrators<br/>(HTTPS / Port 443)"]:::clientStyle
+        R53["🌐 AWS Route 53<br/>(DNS & Latency Routing)"]:::edgeStyle
+        WAF["🛡️ AWS WAF & Shield<br/>(DDoS & SQLi Defense)"]:::edgeStyle
+        IGW["🚪 Internet Gateway<br/>(VPC Ingress 0.0.0.0/0)"]:::edgeStyle
+    end
+
+    subgraph Step2["🪜 STEP 2: PUBLIC DMZ SUBNET (10.0.1.0/24)"]
+        ALB["⚖️ Application Load Balancer (ALB)<br/>(SSL/TLS Termination & Path Routing)"]:::dmzStyle
+        Bastion["🏰 Bastion Jump Host (EC2)<br/>(Secure SSH Port 22 Gateway)"]:::dmzStyle
+        NAT["🔄 AWS NAT Gateway<br/>(Outbound Internet for Private Subnets)"]:::dmzStyle
+    end
+
+    subgraph Step3["🪜 STEP 3: PRIVATE APPLICATION SUBNET (10.0.2.0/24)"]
+        ASG["⚡ Auto Scaling Group (ASG)<br/>(Dynamic EC2 Compute Scaling)"]:::computeStyle
+        Docker1["🐳 VoteSecure Primary Container<br/>(PHP 8.2 Apache / Health Probe)"]:::computeStyle
+        Docker2["☸️ VoteSecure Kubernetes Pod 2<br/>(Zero-Downtime Rolling Replica)"]:::computeStyle
+    end
+
+    subgraph Step4["🪜 STEP 4: PRIVATE DATA & STORAGE TIER (10.0.3.0/24 & 10.0.4.0/24)"]
+        RDS_Primary["🗄️ Amazon RDS MySQL 8.0 (Primary)<br/>(AZ-1 / Port 3306 / Prepared Statements)"]:::dataStyle
+        RDS_Standby["🔄 Multi-AZ Standby Replica<br/>(AZ-2 / Sync Replication / Auto-Failover)"]:::dataStyle
+        S3["📦 Amazon S3 & Secrets Manager<br/>(Candidate Images, Backups & KMS Encryption)"]:::dataStyle
+    end
+
+    subgraph Step5["🪜 STEP 5: MONITORING, OBSERVABILITY & CI/CD"]
+        CloudWatch["📊 Amazon CloudWatch<br/>(Container Metrics, CPU Alarms & Logs)"]:::devopsStyle
+        Jenkins["🏗️ Jenkins & GitHub Actions<br/>(Automated Build, Trivy & K8s Rollout)"]:::devopsStyle
+    end
+
+    Users --> R53
+    R53 --> WAF
+    WAF --> IGW
+    IGW --> ALB
+    Users -.->|Admin SSH| Bastion
+    Bastion -.->|Internal SSH 22| ASG
+    ALB -->|Forward HTTP 80| Docker1
+    ALB -->|Forward HTTP 80| Docker2
+    ASG --- Docker1
+    ASG --- Docker2
+    Docker1 -->|Egress Updates| NAT
+    NAT --> IGW
+    Docker1 -->|SQL Transactions :3306| RDS_Primary
+    Docker2 -->|SQL Transactions :3306| RDS_Primary
+    RDS_Primary -.->|Sync Replication| RDS_Standby
+    Docker1 -.->|Photo Uploads / Presigned URLs| S3
+    ASG -.->|Metrics & Logs| CloudWatch
+    Jenkins -.->|Deploy Rolling Pods| Docker2
 ```
 
 ### 1️⃣ Phase 1: System Initialization & Bootstrapping
@@ -123,6 +158,41 @@ VoteSecure connects administrators, voters, database engines, and automated DevO
 3. **Continuous Delivery & Zero-Downtime Rollout**:
    - **Kubernetes**: Deploys via `scripts/deploy-k8s.sh` using rolling updates (`maxSurge: 1, maxUnavailable: 0`). A new container pod spins up, passes the `/health.php` readiness probe, and only then is the old pod retired.
    - **AWS Cloud**: Terraform provisions high-availability multi-tier infrastructure (custom VPC, private subnets, Bastion host, EC2 compute, and RDS MySQL) with automated Docker bootstrap.
+
+---
+
+## ☁️ AWS Cloud Infrastructure & Component Breakdown
+
+The AWS cloud deployment utilizes a battle-tested **Multi-AZ 3-Tier Enterprise Architecture** adhering strictly to AWS Well-Architected Framework principles (Security, Reliability, Performance Efficiency, and Cost Optimization):
+
+| AWS Service / Component | Layer / Tier | Role & Purpose in VoteSecure | Key Configuration Details |
+|---|---|---|---|
+| **🌐 Amazon VPC** | Network Isolation | Private virtual network encapsulating all infrastructure | CIDR: `10.0.0.0/16`, DNS resolution & hostnames enabled |
+| **🚪 Internet Gateway (IGW)** | Edge Ingress/Egress | Connects public subnet resources directly to the open internet | Attached to VPC, default route for `0.0.0.0/0` in public route table |
+| **🔄 AWS NAT Gateway** | Egress Translation | Provides outbound internet for private EC2 instances without exposing them | Deployed in Public Subnet with static Elastic IP (EIP) |
+| **🏢 Public Subnet (`10.0.1.0/24`)** | DMZ Tier | Hosts edge-facing services: ALB, Bastion Jump Host, and NAT Gateway | `map_public_ip_on_launch = true`, AZ: `ap-south-1a` |
+| **🛡️ Application Load Balancer (ALB)** | Traffic Distribution | Distributes incoming HTTPS/HTTP traffic across multi-AZ container pods | Port 80/443 listener, TLS 1.3 termination, Health probe: `/health.php` |
+| **🏰 Bastion Jump Host (EC2)** | Security Management | Secure bastion jump box for authenticated admin SSH tunneling | `t3.micro` EC2 in public subnet, restricted by SSH IP security group |
+| **⚡ Private App Subnet (`10.0.2.0/24`)** | Compute Tier | Houses the containerized application EC2 instances and pods | Isolated from public ingress; routes outbound traffic through NAT Gateway |
+| **🐳 EC2 Compute & ASG** | Compute Engine | Runs VoteSecure Docker containers and Kubernetes nodes | Ubuntu 22.04 LTS (`t3.small`/`t3.medium`), automated bootstrap user-data |
+| **🗄️ Private DB Subnet 1 (`10.0.3.0/24`)**| Data Tier (AZ-1) | Primary subnet for Amazon RDS MySQL database | AZ: `ap-south-1a`, completely air-gapped from internet access |
+| **🗄️ Private DB Subnet 2 (`10.0.4.0/24`)**| Data Tier (AZ-2) | Secondary availability zone for RDS Multi-AZ standby replica | AZ: `ap-south-1b`, meets AWS DB Subnet Group multi-AZ requirement |
+| **🔄 Amazon RDS MySQL 8.0** | Database Tier | Managed relational database engine for voters, votes, and elections | Engine 8.0, Multi-AZ sync replication, 60s auto-failover, 20GB gp3 storage |
+| **📦 Amazon S3 Bucket** | Object Storage | Highly durable storage for candidate profile images and database snapshots | AES-256 SSE encryption, private bucket policies, pre-signed upload URLs |
+| **🌐 AWS Route 53** | Global DNS | Highly available cloud DNS service with health checks | Low-latency Anycast routing, alias records pointing to ALB |
+| **🛡️ AWS WAF & Shield** | Perimeter Security | Blocks SQL Injection, Cross-Site Scripting (XSS), and Layer 7 DDoS | Managed rule sets for OWASP Top 10 vulnerabilities |
+| **📊 Amazon CloudWatch** | Observability | Real-time metric collection, alarms, and container log aggregation | CPU/Memory utilization alarms, `/health.php` uptime monitoring, SNS alerts |
+| **🔐 AWS Secrets Manager & KMS** | Secret Security | Stores database passwords, encryption keys, and environment variables | Automated secret rotation and envelope encryption via AWS KMS |
+| **🔒 Security Groups (Firewalls)** | Network Security | Stateful virtual firewalls implementing strict least-privilege traffic rules | Distinct groups for Bastion, ALB, App Compute, and RDS Database |
+
+### 🔒 Security Group Firewall Matrix
+
+| Security Group | Inbound Rules | Outbound Rules | Purpose |
+|---|---|---|---|
+| **`bastion-sg`** | Port `22` (SSH) from `YOUR_IP/32` only | All traffic (`0.0.0.0/0`) | Secure administrator jump access |
+| **`alb-sg`** | Port `80` (HTTP) & `443` (HTTPS) from `0.0.0.0/0` | Port `80` to `app-sg` | Public web ingress |
+| **`app-sg`** | Port `80` from `alb-sg`, Port `22` from `bastion-sg` | All traffic via NAT Gateway | Application container compute |
+| **`db-sg`** | Port `3306` (MySQL) from `app-sg` only | None (Air-gapped) | Zero direct internet exposure for voter data |
 
 ---
 
