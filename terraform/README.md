@@ -1,113 +1,112 @@
-# 🏗️ Terraform Infrastructure as Code (AWS VoteSecure)
+# 🏗️ 3-Tier Multi-Subnet Architecture with Bastion (AWS VoteSecure)
 
-This directory contains production-ready **Terraform** configurations to provision the complete AWS cloud infrastructure for **VoteSecure** with a single command.
-
----
-
-## 🏛️ Architecture Overview
-
-```
-                          AWS CLOUD
-┌─────────────────────────────────────────────────────────────┐
-│ Custom VPC (10.0.0.0/16) + Internet Gateway                │
-│                                                             │
-│   ┌─────────────────────────────────────────────────────┐   │
-│   │ Public Subnet (10.0.1.0/24)                         │   │
-│   │                                                     │   │
-│   │   [ Elastic IP ]                                    │   │
-│   │         │                                           │   │
-│   │   ┌─────▼───────────────────────────────────────┐   │   │
-│   │   │ EC2 Instance (t3.micro, Ubuntu 22.04)       │   │   │
-│   │   │   • Docker Engine + Docker Compose v2       │   │   │
-│   │   │   • VoteSecure App Container (:80)          │   │   │
-│   │   │   • Local MySQL Container (if enable_rds=F) │   │   │
-│   │   └─────────────────────────────────────────────┘   │   │
-│   └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│   ┌─────────────────────────────────────────────────────┐   │
-│   │ Private Subnet (Optional, if enable_rds = true)     │   │
-│   │                                                     │   │
-│   │   ┌─────────────────────────────────────────────┐   │   │
-│   │   │ AWS RDS MySQL 8.0 (db.t3.micro)             │   │   │
-│   │   │ (Accessible only from EC2 Web SG)           │   │   │
-│   │   └─────────────────────────────────────────────┘   │   │
-│   └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+This Terraform module provisions an enterprise-grade **3-Tier AWS Network & Compute Architecture**:
+- **Public Subnets**: Ingress, NAT Gateway, Application Load Balancers (`10.0.1.0/24`, `10.0.2.0/24`).
+- **Dedicated Bastion Subnet**: Isolated public subnet housing a secure Bastion Jump Box with an Elastic IP (`10.0.3.0/24`).
+- **Private Application Subnets**: Private subnets across 2 Availability Zones for VoteSecure EC2 instances (`10.0.11.0/24`, `10.0.12.0/24`).
+- **Private Database Subnets**: Isolated subnets across 2 Availability Zones dedicated to AWS RDS MySQL (`10.0.21.0/24`, `10.0.22.0/24`).
 
 ---
 
-## 📋 Prerequisites
+## 🏛️ Network Topology
 
-1. **Terraform CLI** installed (`>= 1.5.0`):
-   ```bash
-   terraform -version
-   ```
-2. **AWS CLI** installed and configured with appropriate IAM permissions (VPC, EC2, RDS):
-   ```bash
-   aws configure
-   ```
-3. *(Optional)* An AWS Key Pair in your chosen region if you want to SSH into the instance.
+```
+                                  INTERNET
+                                      │
+                                      ▼
+                        ┌───────────────────────────┐
+                        │  Internet Gateway (IGW)   │
+                        └─────────────┬─────────────┘
+                                      │
+      ════════════════════════════════╪════════════════════════════════
+      1️⃣ PUBLIC TIER (10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24)
+      ────────────────────────────────────────────────────────────────
+        ┌─────────────────────────┐       ┌─────────────────────────┐
+        │  Bastion Subnet (AZ-A)  │       │  Public Subnet (AZ-A/B) │
+        │  ┌───────────────────┐  │       │                         │
+        │  │ Bastion Jump Host │  │       │   [ NAT Gateway ]       │
+        │  │ (Elastic IP :22)  │  │       │   (Outbound internet)   │
+        │  └─────────┬─────────┘  │       │                         │
+        └────────────┼────────────┘       └────────────▲────────────┘
+                     │ (Internal SSH only)             │
+      ═══════════════╪═════════════════════════════════╪══════════════
+      2️⃣ PRIVATE APP TIER (10.0.11.0/24, 10.0.12.0/24) │
+      ─────────────────────────────────────────────────┼──────────────
+        ┌──────────────────────────────────────────────┴───────────┐
+        │  Private App Subnet (AZ-A & AZ-B)                        │
+        │  ┌─────────────────────────────────────────────────────┐ │
+        │  │ VoteSecure App EC2 (Docker, PHP 8.2 Apache)         │ │
+        │  │ • SSH permitted ONLY from Bastion Security Group    │ │
+        │  │ • Outbound updates routed through NAT Gateway       │ │
+        │  └──────────────────────────┬──────────────────────────┘ │
+        └─────────────────────────────┼────────────────────────────┘
+                                      │ (MySQL Port 3306)
+      ════════════════════════════════╪═══════════════════════════════
+      3️⃣ PRIVATE DATABASE TIER (10.0.21.0/24, 10.0.22.0/24)
+      ────────────────────────────────────────────────────────────────
+        ┌──────────────────────────────────────────────────────────┐
+        │  Private DB Subnets (AZ-A & AZ-B)                        │
+        │  ┌─────────────────────────────────────────────────────┐ │
+        │  │ AWS RDS MySQL 8.0 (Multi-AZ DB Subnet Group)        │ │
+        │  │ • No Internet access                                │ │
+        │  │ • Port 3306 allowed strictly from App & Bastion SGs │ │
+        │  └─────────────────────────────────────────────────────┘ │
+        └──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔒 Security Highlights
+
+1. **Zero Public SSH on App Server**: When `enable_bastion = true`, port 22 on the application server accepts connections **exclusively from the Bastion Security Group**.
+2. **Database Isolation**: The RDS MySQL instance has zero public routing and lives in dedicated private subnets (`10.0.21.0/24` & `10.0.22.0/24`).
+3. **Bastion Jump Host**: Administrator access uses standard SSH ProxyJump (`ssh -J ubuntu@<bastion-ip> ubuntu@<app-private-ip>`).
 
 ---
 
 ## 🚀 Quickstart Deployment
 
-### 1. Navigate to the terraform directory:
 ```bash
+# 1. Switch to terraform directory
 cd terraform
-```
 
-### 2. Configure variables:
-```bash
+# 2. Configure variables
 cp terraform.tfvars.example terraform.tfvars
 ```
-Open `terraform.tfvars` and configure:
-- `aws_region`: Target region (e.g. `ap-south-1` or `us-east-1`).
-- `ssh_key_name`: Name of your AWS Key Pair (leave blank if SSH key is not needed).
-- `enable_rds`: `false` (default: runs MySQL on EC2 at no extra DB cost) or `true` (provisions AWS RDS).
 
-### 3. Initialize Terraform:
+Configure `terraform.tfvars`:
+- `ssh_key_name`: Name of your AWS Key Pair
+- `enable_bastion`: `true` (provisions Bastion jump host)
+- `enable_rds`: `false` (uses local containerized MySQL) or `true` (provisions AWS RDS)
+
 ```bash
+# 3. Initialize & Deploy
 terraform init
-```
-
-### 4. Review the Execution Plan:
-```bash
-terraform plan
-```
-
-### 5. Apply & Provision Infrastructure:
-```bash
 terraform apply
 ```
-Type `yes` when prompted. Terraform will provision the VPC, Subnets, Security Groups, and EC2 instance.
 
 ---
 
-## 📤 Outputs
+## 💻 Connecting via Bastion Jump Host
 
-After `terraform apply` finishes, you will see output values:
+After `terraform apply` finishes, the outputs will show your connection commands:
 
-```text
-Outputs:
+```bash
+# SSH directly to Bastion:
+ssh -i ~/.ssh/my-key.pem ubuntu@<BASTION_PUBLIC_IP>
 
-app_url          = "http://13.206.147.173"
-health_check_url = "http://13.206.147.173/health.php"
-ec2_public_ip    = "13.206.147.173"
-ssh_command      = "ssh -i ~/.ssh/my-key.pem ubuntu@13.206.147.173"
-rds_endpoint     = "N/A (MySQL is running containerized on EC2 via Docker Compose)"
+# SSH seamlessly to private App instance through Bastion:
+ssh -J ubuntu@<BASTION_PUBLIC_IP> -i ~/.ssh/my-key.pem ubuntu@<APP_PRIVATE_IP>
+
+# Open a secure MySQL tunnel through Bastion to private RDS:
+ssh -L 3306:<RDS_ENDPOINT>:3306 -N -i ~/.ssh/my-key.pem ubuntu@<BASTION_PUBLIC_IP>
 ```
 
-Open `app_url` in your browser. The application is live!
-
 ---
 
-## 🧹 Teardown / Cleanup
+## 🧹 Teardown
 
-To delete all AWS cloud resources and avoid ongoing AWS charges:
-
+To delete all provisioned AWS resources:
 ```bash
 terraform destroy
 ```
-Type `yes` to confirm destruction.

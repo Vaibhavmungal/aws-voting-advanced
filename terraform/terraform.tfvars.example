@@ -16,12 +16,25 @@ root_volume_size = 20
 ssh_key_name     = ""
 allowed_ssh_cidr = "0.0.0.0/0"
 
-# Allocate a persistent Elastic IP (recommended)
+# ------------------------------------------------------------------------------
+# 🛡️ Bastion & Subnet Architecture
+# ------------------------------------------------------------------------------
+# Enable dedicated Bastion Jump Host in the Bastion Subnet
+enable_bastion        = true
+bastion_instance_type = "t3.nano"
+
+# Place App EC2 in private subnet (requires enable_nat_gateway = true for outbound traffic)
+app_in_private_subnet = false
+enable_nat_gateway    = false
+
+# Allocate a persistent Elastic IP (applicable when app_in_private_subnet = false)
 enable_elastic_ip = true
 
-# Database Configuration
+# ------------------------------------------------------------------------------
+# 🗄️ Database Configuration
+# ------------------------------------------------------------------------------
 # Set enable_rds = false to run MySQL inside Docker on EC2 (Free-Tier friendly)
-# Set enable_rds = true to provision an isolated AWS RDS MySQL instance
+# Set enable_rds = true to provision an isolated AWS RDS MySQL instance in private DB subnets
 enable_rds         = false
 rds_instance_class = "db.t3.micro"
 db_name            = "aws_voting"

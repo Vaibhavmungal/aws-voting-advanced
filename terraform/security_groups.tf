@@ -2,7 +2,7 @@
 # Security Groups & Firewall Rules
 # ==============================================================================
 
-# Security Group for Web / EC2 Application Instance
+# Security Group for Application Instance
 resource "aws_security_group" "web_sg" {
   name        = "${var.project_name}-${var.environment}-web-sg"
   description = "Security group for VoteSecure Web Application"
@@ -35,13 +35,14 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # SSH
+  # SSH: Securely chained via Bastion if enabled, else fallback to allowed CIDR
   ingress {
-    description = "Allow SSH from allowed CIDR"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
+    description     = "Allow SSH strictly from Bastion Jump Host"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = var.enable_bastion ? [aws_security_group.bastion_sg[0].id] : null
+    cidr_blocks     = var.enable_bastion ? null : [var.allowed_ssh_cidr]
   }
 
   # All Outbound
@@ -58,19 +59,32 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# Security Group for RDS MySQL Database (Isolated)
+# Security Group for RDS MySQL Database (Strictly Isolated)
 resource "aws_security_group" "rds_sg" {
   count       = var.enable_rds ? 1 : 0
   name        = "${var.project_name}-${var.environment}-rds-sg"
-  description = "Allow MySQL traffic strictly from VoteSecure EC2 web security group"
+  description = "Allow MySQL traffic strictly from App and Bastion security groups"
   vpc_id      = aws_vpc.votesecure_vpc.id
 
+  # MySQL from App Server
   ingress {
-    description     = "Allow MySQL access from Web SG"
+    description     = "Allow MySQL access from Web App SG"
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
     security_groups = [aws_security_group.web_sg.id]
+  }
+
+  # MySQL from Bastion Jump Host (for DB administration/tunneling)
+  dynamic "ingress" {
+    for_each = var.enable_bastion ? [1] : []
+    content {
+      description     = "Allow MySQL tunnel from Bastion Jump Host"
+      from_port       = 3306
+      to_port         = 3306
+      protocol        = "tcp"
+      security_groups = [aws_security_group.bastion_sg[0].id]
+    }
   }
 
   egress {

@@ -26,6 +26,10 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
+# ------------------------------------------------------------------------------
+# 💻 Compute & Bastion Configuration
+# ------------------------------------------------------------------------------
+
 variable "instance_type" {
   description = "EC2 instance type (Free Tier eligible: t3.micro or t2.micro)"
   type        = string
@@ -45,9 +49,21 @@ variable "ssh_key_name" {
 }
 
 variable "allowed_ssh_cidr" {
-  description = "CIDR block allowed for SSH access (default 0.0.0.0/0)"
+  description = "CIDR block allowed for SSH access to Bastion (default 0.0.0.0/0)"
   type        = string
   default     = "0.0.0.0/0"
+}
+
+variable "enable_bastion" {
+  description = "Deploy a dedicated Bastion (Jump Host) in the Bastion subnet for secure SSH"
+  type        = bool
+  default     = true
+}
+
+variable "bastion_instance_type" {
+  description = "EC2 instance type for Bastion Host"
+  type        = string
+  default     = "t3.nano"
 }
 
 variable "enable_elastic_ip" {
@@ -56,8 +72,24 @@ variable "enable_elastic_ip" {
   default     = true
 }
 
+variable "enable_nat_gateway" {
+  description = "Provision AWS Managed NAT Gateway for private subnets (costs ~$0.045/hr). Set to false to avoid NAT charges."
+  type        = bool
+  default     = false
+}
+
+variable "app_in_private_subnet" {
+  description = "Place App EC2 in private app subnet (requires enable_nat_gateway = true for outbound traffic)"
+  type        = bool
+  default     = false
+}
+
+# ------------------------------------------------------------------------------
+# 🗄️ Database Configuration
+# ------------------------------------------------------------------------------
+
 variable "enable_rds" {
-  description = "Set to true to provision a dedicated AWS RDS MySQL instance. If false, MySQL runs containerized on EC2 (Free-Tier friendly)."
+  description = "Set to true to provision a dedicated AWS RDS MySQL instance in private DB subnets. If false, MySQL runs containerized on EC2."
   type        = bool
   default     = false
 }
@@ -86,6 +118,10 @@ variable "db_password" {
   default     = "VotingSecurePass2026!"
   sensitive   = true
 }
+
+# ------------------------------------------------------------------------------
+# 🐳 Container Image
+# ------------------------------------------------------------------------------
 
 variable "docker_image" {
   description = "Docker Hub repository image to run"

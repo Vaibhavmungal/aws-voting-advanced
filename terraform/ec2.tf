@@ -23,9 +23,9 @@ resource "aws_instance" "web" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
   key_name                    = var.ssh_key_name != "" ? var.ssh_key_name : null
-  subnet_id                   = aws_subnet.public_1.id
+  subnet_id                   = var.app_in_private_subnet ? aws_subnet.private_app_1.id : aws_subnet.public_1.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
-  associate_public_ip_address = true
+  associate_public_ip_address = var.app_in_private_subnet ? false : true
 
   root_block_device {
     volume_size           = var.root_volume_size
@@ -53,12 +53,13 @@ resource "aws_instance" "web" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-app"
+    Tier = var.app_in_private_subnet ? "PrivateApp" : "PublicApp"
   }
 }
 
-# Optional Elastic IP for static public IPv4
+# Optional Elastic IP for static public IPv4 (applicable when instance is in public subnet)
 resource "aws_eip" "web_eip" {
-  count    = var.enable_elastic_ip ? 1 : 0
+  count    = (var.enable_elastic_ip && !var.app_in_private_subnet) ? 1 : 0
   instance = aws_instance.web.id
   domain   = "vpc"
 

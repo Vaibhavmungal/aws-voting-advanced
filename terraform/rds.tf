@@ -6,7 +6,7 @@ resource "aws_db_subnet_group" "rds_subnet_group" {
   count       = var.enable_rds ? 1 : 0
   name        = "${var.project_name}-${var.environment}-db-subnets"
   description = "Subnet group across multiple AZs for VoteSecure RDS"
-  subnet_ids  = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+  subnet_ids  = [aws_subnet.private_db_1.id, aws_subnet.private_db_2.id]
 
   tags = {
     Name = "${var.project_name}-${var.environment}-db-subnets"
