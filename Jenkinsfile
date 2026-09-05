@@ -51,7 +51,7 @@ pipeline {
         
         // Dynamically resolved during pipeline execution
         RESOLVED_DOCKER_USER = ''
-        TARGET_IMAGE         = ''
+        TARGET_IMAGE         = 'aws-voting'
         CAN_PUSH             = 'false'
     }
 
@@ -74,6 +74,8 @@ pipeline {
                 script {
                     echo "⚙️ Resolving build and deployment targets..."
 
+                    def baseImage = (params.IMAGE_NAME ?: 'aws-voting').trim()
+
                     // 1. Resolve Docker Hub User if parameter or credentials exist
                     if (params.DOCKERHUB_USERNAME?.trim()) {
                         env.RESOLVED_DOCKER_USER = params.DOCKERHUB_USERNAME.trim()
@@ -81,7 +83,7 @@ pipeline {
                     } else if (params.PUSH_TO_DOCKERHUB == true) {
                         try {
                             withCredentials([usernamePassword(
-                                credentialsId: params.DOCKERHUB_CREDENTIALS_ID,
+                                credentialsId: params.DOCKERHUB_CREDENTIALS_ID ?: 'dockerhub-credentials',
                                 usernameVariable: 'AUTO_USER',
                                 passwordVariable: 'AUTO_PASS'
                             )]) {
@@ -98,16 +100,16 @@ pipeline {
 
                     // 2. Determine target image name
                     if (env.RESOLVED_DOCKER_USER != '') {
-                        env.TARGET_IMAGE = "${env.RESOLVED_DOCKER_USER}/${params.IMAGE_NAME}"
+                        env.TARGET_IMAGE = "${env.RESOLVED_DOCKER_USER}/${baseImage}"
                         if (params.PUSH_TO_DOCKERHUB == true) {
                             env.CAN_PUSH = 'true'
                         }
                     } else {
-                        env.TARGET_IMAGE = params.IMAGE_NAME
+                        env.TARGET_IMAGE = baseImage
                         env.CAN_PUSH = 'false'
                     }
 
-                    echo "🎯 Target Image:    ${env.TARGET_IMAGE}:${IMAGE_TAG}"
+                    echo "🎯 Target Image:    ${env.TARGET_IMAGE}:${env.IMAGE_TAG}"
                     echo "🏷️ Latest Alias:    ${env.TARGET_IMAGE}:latest"
                     echo "📤 Push to Hub:     ${env.CAN_PUSH}"
                 }
@@ -134,14 +136,14 @@ pipeline {
             steps {
                 echo "🐳 Automatically building VoteSecure image from Dockerfile..."
                 sh """
-                    docker build -t ${params.IMAGE_NAME}:${IMAGE_TAG} -t ${params.IMAGE_NAME}:latest .
+                    docker build -t ${env.TARGET_IMAGE}:${env.IMAGE_TAG} -t ${env.TARGET_IMAGE}:latest .
                     
-                    if [ "${env.TARGET_IMAGE}" != "${params.IMAGE_NAME}" ]; then
-                        docker tag ${params.IMAGE_NAME}:${IMAGE_TAG} ${TARGET_IMAGE}:${IMAGE_TAG}
-                        docker tag ${params.IMAGE_NAME}:latest ${TARGET_IMAGE}:latest
+                    if [ "${env.TARGET_IMAGE}" != "aws-voting" ]; then
+                        docker tag ${env.TARGET_IMAGE}:${env.IMAGE_TAG} aws-voting:${env.IMAGE_TAG} || true
+                        docker tag ${env.TARGET_IMAGE}:latest aws-voting:latest || true
                     fi
                 """
-                echo "✅ Image built successfully: ${TARGET_IMAGE}:${IMAGE_TAG}"
+                echo "✅ Image built successfully: ${env.TARGET_IMAGE}:${env.IMAGE_TAG}"
             }
         }
 
@@ -150,7 +152,7 @@ pipeline {
                 echo "🛡️ Running container vulnerability scan..."
                 sh """
                     if command -v trivy >/dev/null 2>&1; then
-                        trivy image --severity HIGH,CRITICAL --no-progress ${TARGET_IMAGE}:${IMAGE_TAG} || true
+                        trivy image --severity HIGH,CRITICAL --no-progress ${env.TARGET_IMAGE}:${env.IMAGE_TAG} || true
                     else
                         echo "ℹ️ Trivy is not installed on this Jenkins agent. Skipping vulnerability scan."
                     fi
@@ -163,22 +165,22 @@ pipeline {
                 expression { env.CAN_PUSH == 'true' }
             }
             steps {
-                echo "📤 Authenticating and pushing image to Docker Hub (${TARGET_IMAGE})..."
+                echo "📤 Authenticating and pushing image to Docker Hub (${env.TARGET_IMAGE})..."
                 withCredentials([usernamePassword(
-                    credentialsId: params.DOCKERHUB_CREDENTIALS_ID,
+                    credentialsId: params.DOCKERHUB_CREDENTIALS_ID ?: 'dockerhub-credentials',
                     usernameVariable: 'DOCKERHUB_USER',
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
                     sh """
                         echo "\$DOCKERHUB_PASS" | docker login -u "\$DOCKERHUB_USER" --password-stdin
-                        echo "Pushing tag: ${IMAGE_TAG}..."
-                        docker push ${TARGET_IMAGE}:${IMAGE_TAG}
+                        echo "Pushing tag: ${env.IMAGE_TAG}..."
+                        docker push ${env.TARGET_IMAGE}:${env.IMAGE_TAG}
                         echo "Pushing tag: latest..."
-                        docker push ${TARGET_IMAGE}:latest
+                        docker push ${env.TARGET_IMAGE}:latest
                         docker logout
                     """
                 }
-                echo "✅ Successfully pushed ${TARGET_IMAGE}:${IMAGE_TAG} to Docker Hub!"
+                echo "✅ Successfully pushed ${env.TARGET_IMAGE}:${env.IMAGE_TAG} to Docker Hub!"
             }
         }
 
@@ -189,27 +191,28 @@ pipeline {
             steps {
                 echo "☸️ Initiating zero-downtime rolling deployment to Kubernetes pods..."
                 script {
+                    def k8sNamespace = params.K8S_NAMESPACE ?: 'votesecure'
                     def deployScript = """
                         if command -v kubectl >/dev/null 2>&1; then
                             echo "Checking Kubernetes cluster connectivity..."
                             if kubectl cluster-info >/dev/null 2>&1; then
-                                echo "1. Ensuring namespace '${params.K8S_NAMESPACE}' exists..."
-                                kubectl create namespace ${params.K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+                                echo "1. Ensuring namespace '${k8sNamespace}' exists..."
+                                kubectl create namespace ${k8sNamespace} --dry-run=client -o yaml | kubectl apply -f -
 
                                 echo "2. Applying base Kubernetes manifests..."
                                 kubectl apply -f k8s/votesecure.yaml
 
-                                echo "3. Triggering rolling update to container image '${TARGET_IMAGE}:${IMAGE_TAG}'..."
-                                kubectl set image deployment/votesecure-app app=${TARGET_IMAGE}:${IMAGE_TAG} -n ${params.K8S_NAMESPACE}
+                                echo "3. Triggering rolling update to container image '${env.TARGET_IMAGE}:${env.IMAGE_TAG}'..."
+                                kubectl set image deployment/votesecure-app app=${env.TARGET_IMAGE}:${env.IMAGE_TAG} -n ${k8sNamespace}
 
                                 echo "4. Waiting for pod rollout completion (zero-downtime transition)..."
-                                kubectl rollout status deployment/votesecure-app -n ${params.K8S_NAMESPACE} --timeout=180s
+                                kubectl rollout status deployment/votesecure-app -n ${k8sNamespace} --timeout=180s
 
-                                echo "5. Active pods in namespace '${params.K8S_NAMESPACE}':"
-                                kubectl get pods -n ${params.K8S_NAMESPACE} -l app=votesecure -o wide
+                                echo "5. Active pods in namespace '${k8sNamespace}':"
+                                kubectl get pods -n ${k8sNamespace} -l app=votesecure -o wide
 
                                 echo "6. Exposed Services:"
-                                kubectl get svc -n ${params.K8S_NAMESPACE}
+                                kubectl get svc -n ${k8sNamespace}
                                 echo "✅ Kubernetes rolling update completed successfully!"
                             else
                                 echo "⚠️ kubectl is installed on agent, but cluster API is not reachable."
@@ -218,7 +221,7 @@ pipeline {
                         else
                             echo "⚠️ kubectl CLI is not installed on this Jenkins agent."
                             echo "Kubernetes manifests are validated and saved in k8s/votesecure.yaml."
-                            echo "You can deploy anytime using: ./scripts/deploy-k8s.sh ${TARGET_IMAGE}:${IMAGE_TAG} ${params.K8S_NAMESPACE}"
+                            echo "You can deploy anytime using: ./scripts/deploy-k8s.sh ${env.TARGET_IMAGE}:${env.IMAGE_TAG} ${k8sNamespace}"
                         fi
                     """
 
@@ -260,8 +263,8 @@ pipeline {
         success {
             echo "==========================================================="
             echo "🎉 VoteSecure CI/CD Pipeline Succeeded!"
-            echo "📦 Container Image:  ${TARGET_IMAGE}:${IMAGE_TAG}"
-            echo "☸️ Kubernetes Target: ${params.K8S_NAMESPACE}"
+            echo "📦 Container Image:  ${env.TARGET_IMAGE}:${env.IMAGE_TAG}"
+            echo "☸️ Kubernetes Target: ${params.K8S_NAMESPACE ?: 'votesecure'}"
             echo "==========================================================="
         }
         failure {
