@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    triggers {
+        // Automatically polls GitHub every 2 minutes for new commits and triggers build
+        pollSCM('H/2 * * * *')
+    }
+
     parameters {
         string(
             name: 'IMAGE_NAME',
