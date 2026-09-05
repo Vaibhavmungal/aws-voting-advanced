@@ -33,6 +33,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: gp2
   resources:
     requests:
       storage: 5Gi
@@ -61,7 +62,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: aws-voting:latest
+          image: vaibhavvv85/aws-voting:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

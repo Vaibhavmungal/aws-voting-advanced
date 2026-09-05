@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST_FILE="${SCRIPT_DIR}/k8s/votesecure.yaml"
 
 # Default arguments
-IMAGE="${1:-aws-voting:latest}"
+IMAGE="${1:-vaibhavvv85/aws-voting:latest}"
 NAMESPACE="${2:-votesecure}"
 
 echo "====================================================="

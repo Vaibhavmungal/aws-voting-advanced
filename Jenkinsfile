@@ -14,18 +14,18 @@ pipeline {
         )
         string(
             name: 'DOCKERHUB_USERNAME',
-            defaultValue: '',
-            description: 'Optional Docker Hub username/namespace (Leave BLANK to auto-detect from Jenkins Credentials, or leave empty if not pushing)'
+            defaultValue: 'vaibhavvv85',
+            description: 'Docker Hub username/namespace (defaults to vaibhavvv85)'
         )
         string(
             name: 'DOCKERHUB_CREDENTIALS_ID',
-            defaultValue: 'dockerhub-credentials',
-            description: 'Optional Jenkins Credentials ID for Docker Hub'
+            defaultValue: 'docker-hub-credentials',
+            description: 'Jenkins Credentials ID for Docker Hub (e.g. docker-hub-credentials or dockerhub-credentials)'
         )
         booleanParam(
             name: 'PUSH_TO_DOCKERHUB',
-            defaultValue: false,
-            description: 'Push image to Docker Hub (requires Docker Hub username or credentials)'
+            defaultValue: true,
+            description: 'Push image to Docker Hub (set to true to automatically publish vaibhavvv85/aws-voting)'
         )
         booleanParam(
             name: 'DEPLOY_TO_K8S',
@@ -79,22 +79,24 @@ pipeline {
                     // 1. Resolve Docker Hub User if parameter or credentials exist
                     if (params.DOCKERHUB_USERNAME?.trim()) {
                         env.RESOLVED_DOCKER_USER = params.DOCKERHUB_USERNAME.trim()
-                        echo "👤 Using Docker Hub username from build parameter: '${env.RESOLVED_DOCKER_USER}'"
+                        echo "👤 Using Docker Hub username: '${env.RESOLVED_DOCKER_USER}'"
                     } else if (params.PUSH_TO_DOCKERHUB == true) {
-                        try {
-                            withCredentials([usernamePassword(
-                                credentialsId: params.DOCKERHUB_CREDENTIALS_ID ?: 'dockerhub-credentials',
-                                usernameVariable: 'AUTO_USER',
-                                passwordVariable: 'AUTO_PASS'
-                            )]) {
-                                if (env.AUTO_USER?.trim()) {
-                                    env.RESOLVED_DOCKER_USER = env.AUTO_USER.trim()
-                                    echo "👤 Auto-detected Docker Hub username from credential '${params.DOCKERHUB_CREDENTIALS_ID}': '${env.RESOLVED_DOCKER_USER}'"
+                        def credList = [params.DOCKERHUB_CREDENTIALS_ID, 'docker-hub-credentials', 'dockerhub-credentials'].findAll { it }
+                        for (cId in credList) {
+                            try {
+                                withCredentials([usernamePassword(
+                                    credentialsId: cId,
+                                    usernameVariable: 'AUTO_USER',
+                                    passwordVariable: 'AUTO_PASS'
+                                )]) {
+                                    if (env.AUTO_USER?.trim()) {
+                                        env.RESOLVED_DOCKER_USER = env.AUTO_USER.trim()
+                                        echo "👤 Auto-detected Docker Hub username from credential '${cId}': '${env.RESOLVED_DOCKER_USER}'"
+                                        break
+                                    }
                                 }
+                            } catch (Exception ignored) {
                             }
-                        } catch (Exception e) {
-                            echo "ℹ️ No Docker Hub credential found for ID '${params.DOCKERHUB_CREDENTIALS_ID}'."
-                            env.RESOLVED_DOCKER_USER = ''
                         }
                     }
 
@@ -166,19 +168,35 @@ pipeline {
             }
             steps {
                 echo "📤 Authenticating and pushing image to Docker Hub (${env.TARGET_IMAGE})..."
-                withCredentials([usernamePassword(
-                    credentialsId: params.DOCKERHUB_CREDENTIALS_ID ?: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKERHUB_USER',
-                    passwordVariable: 'DOCKERHUB_PASS'
-                )]) {
-                    sh """
-                        echo "\$DOCKERHUB_PASS" | docker login -u "\$DOCKERHUB_USER" --password-stdin
-                        echo "Pushing tag: ${env.IMAGE_TAG}..."
-                        docker push ${env.TARGET_IMAGE}:${env.IMAGE_TAG}
-                        echo "Pushing tag: latest..."
-                        docker push ${env.TARGET_IMAGE}:latest
-                        docker logout
-                    """
+                script {
+                    def candidateCreds = [params.DOCKERHUB_CREDENTIALS_ID, 'docker-hub-credentials', 'dockerhub-credentials'].findAll { it }.unique()
+                    boolean pushed = false
+                    for (cId in candidateCreds) {
+                        try {
+                            echo "Attempting Docker Hub login with credential ID: '${cId}'..."
+                            withCredentials([usernamePassword(
+                                credentialsId: cId,
+                                usernameVariable: 'DH_USER',
+                                passwordVariable: 'DH_PASS'
+                            )]) {
+                                sh """
+                                    echo "\$DH_PASS" | docker login -u "\$DH_USER" --password-stdin
+                                    echo "Pushing tag: ${env.IMAGE_TAG}..."
+                                    docker push ${env.TARGET_IMAGE}:${env.IMAGE_TAG}
+                                    echo "Pushing tag: latest..."
+                                    docker push ${env.TARGET_IMAGE}:latest
+                                    docker logout
+                                """
+                                pushed = true
+                            }
+                            if (pushed) { break }
+                        } catch (Exception e) {
+                            echo "⚠️ Login with credential '${cId}' failed or not found: ${e.message}"
+                        }
+                    }
+                    if (!pushed) {
+                        error("❌ Failed to push image to Docker Hub. Please ensure Jenkins has valid credentials with ID 'docker-hub-credentials' or 'dockerhub-credentials'.")
+                    }
                 }
                 echo "✅ Successfully pushed ${env.TARGET_IMAGE}:${env.IMAGE_TAG} to Docker Hub!"
             }
