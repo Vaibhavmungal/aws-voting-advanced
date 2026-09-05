@@ -60,6 +60,8 @@ spec:
       labels:
         app: votesecure
     spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
       containers:
         - name: app
           image: vaibhavvv85/aws-voting:latest
