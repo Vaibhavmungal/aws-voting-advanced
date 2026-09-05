@@ -82,44 +82,53 @@ pipeline {
                         'dockerhub-credentials'
                     ].findAll { it }.unique()
 
-                    // 1. ALWAYS retrieve Docker Hub username & credentials directly from Jenkins credential store
+                    def resolvedUser = ""
+                    def resolvedCred = ""
+
+                    // 1. Retrieve Docker Hub username & credentials directly from Jenkins credential store
                     for (cId in candidateCreds) {
-                        try {
-                            withCredentials([usernamePassword(
-                                credentialsId: cId,
-                                usernameVariable: 'DH_RESOLVED_USER',
-                                passwordVariable: 'DH_RESOLVED_PASS'
-                            )]) {
-                                if (env.DH_RESOLVED_USER?.trim()) {
-                                    env.RESOLVED_DOCKER_USER = env.DH_RESOLVED_USER.trim()
-                                    env.RESOLVED_CRED_ID = cId
-                                    echo "🔑 Loaded Docker Hub credentials from Jenkins ID '${cId}'! Username: '${env.RESOLVED_DOCKER_USER}'"
-                                    break
+                        if (!resolvedUser) {
+                            try {
+                                withCredentials([usernamePassword(
+                                    credentialsId: cId,
+                                    usernameVariable: 'DH_RESOLVED_USER',
+                                    passwordVariable: 'DH_RESOLVED_PASS'
+                                )]) {
+                                    def u = "${DH_RESOLVED_USER}".trim()
+                                    if (!u || u == 'null') {
+                                        u = sh(script: 'echo -n "${DH_RESOLVED_USER:-}"', returnStdout: true).trim()
+                                    }
+                                    if (u && u != 'null' && u != '') {
+                                        resolvedUser = u
+                                        resolvedCred = cId
+                                        echo "🔑 Retrieved Docker Hub credentials from Jenkins ID '${cId}' with username: '${resolvedUser}'"
+                                    }
                                 }
+                            } catch (Exception e) {
+                                echo "ℹ️ Note: Credential '${cId}' check: ${e.message}"
                             }
-                        } catch (Exception ignored) {
                         }
                     }
 
-                    // 2. Fallback to username parameter if no credentials matched
-                    if (!env.RESOLVED_DOCKER_USER?.trim() && params.DOCKERHUB_USERNAME?.trim()) {
-                        env.RESOLVED_DOCKER_USER = params.DOCKERHUB_USERNAME.trim()
-                        echo "👤 Using fallback Docker Hub username parameter: '${env.RESOLVED_DOCKER_USER}'"
+                    // 2. Default/fallback for Docker Hub username
+                    if (!resolvedUser || resolvedUser == 'null') {
+                        if (params.DOCKERHUB_USERNAME?.trim()) {
+                            resolvedUser = params.DOCKERHUB_USERNAME.trim()
+                        } else {
+                            resolvedUser = 'vaibhavvv85'
+                        }
+                        echo "👤 Using Docker Hub username: '${resolvedUser}'"
                     }
 
                     // 3. Set TARGET_IMAGE and push permission
-                    if (env.RESOLVED_DOCKER_USER?.trim()) {
-                        env.TARGET_IMAGE = "${env.RESOLVED_DOCKER_USER}/${baseImage}"
-                        env.CAN_PUSH = (params.PUSH_TO_DOCKERHUB == true && env.RESOLVED_CRED_ID?.trim()) ? 'true' : 'false'
-                    } else {
-                        env.TARGET_IMAGE = baseImage
-                        env.CAN_PUSH = 'false'
-                        echo "ℹ️ No Docker Hub credentials found. Target image set to local '${baseImage}'."
-                    }
+                    env.RESOLVED_DOCKER_USER = resolvedUser
+                    env.RESOLVED_CRED_ID = resolvedCred ?: (params.DOCKERHUB_CREDENTIALS_ID ?: 'docker-hub-credentials')
+                    env.TARGET_IMAGE = "${env.RESOLVED_DOCKER_USER}/${baseImage}"
+                    env.CAN_PUSH = (params.PUSH_TO_DOCKERHUB == true) ? 'true' : 'false'
 
                     echo "🎯 Target Image:    ${env.TARGET_IMAGE}:${env.IMAGE_TAG}"
                     echo "🏷️ Latest Tag:      ${env.TARGET_IMAGE}:latest"
-                    echo "🔐 Credentials ID:  ${env.RESOLVED_CRED_ID ?: 'None'}"
+                    echo "🔐 Credentials ID:  ${env.RESOLVED_CRED_ID}"
                     echo "📤 Push to Hub:     ${env.CAN_PUSH}"
                     echo "☸️ Deploy to K8s:   ${params.DEPLOY_TO_K8S}"
                 }
@@ -181,26 +190,27 @@ pipeline {
                     def candidateCreds = [credIdToUse, 'docker-hub-credentials', 'dockerhub-credentials'].findAll { it }.unique()
                     boolean pushed = false
                     for (cId in candidateCreds) {
-                        try {
-                            echo "Attempting Docker Hub login with Jenkins credential ID: '${cId}'..."
-                            withCredentials([usernamePassword(
-                                credentialsId: cId,
-                                usernameVariable: 'DH_USER',
-                                passwordVariable: 'DH_PASS'
-                            )]) {
-                                sh """
-                                    echo "\$DH_PASS" | docker login -u "\$DH_USER" --password-stdin
-                                    echo "Pushing tag: ${env.IMAGE_TAG}..."
-                                    docker push ${env.TARGET_IMAGE}:${env.IMAGE_TAG}
-                                    echo "Pushing tag: latest..."
-                                    docker push ${env.TARGET_IMAGE}:latest
-                                    docker logout
-                                """
-                                pushed = true
+                        if (!pushed) {
+                            try {
+                                echo "Attempting Docker Hub login with Jenkins credential ID: '${cId}'..."
+                                withCredentials([usernamePassword(
+                                    credentialsId: cId,
+                                    usernameVariable: 'DH_USER',
+                                    passwordVariable: 'DH_PASS'
+                                )]) {
+                                    sh """
+                                        echo "\$DH_PASS" | docker login -u "\$DH_USER" --password-stdin
+                                        echo "Pushing tag: ${env.IMAGE_TAG}..."
+                                        docker push ${env.TARGET_IMAGE}:${env.IMAGE_TAG}
+                                        echo "Pushing tag: latest..."
+                                        docker push ${env.TARGET_IMAGE}:latest
+                                        docker logout
+                                    """
+                                    pushed = true
+                                }
+                            } catch (Exception e) {
+                                echo "⚠️ Login with credential '${cId}' failed or not found: ${e.message}"
                             }
-                            if (pushed) { break }
-                        } catch (Exception e) {
-                            echo "⚠️ Login with credential '${cId}' failed or not found: ${e.message}"
                         }
                     }
                     if (!pushed) {
