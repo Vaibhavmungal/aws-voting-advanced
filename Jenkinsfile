@@ -13,19 +13,19 @@ pipeline {
             description: 'Docker image name (builds automatically from Dockerfile)'
         )
         string(
-            name: 'DOCKERHUB_USERNAME',
-            defaultValue: 'vaibhavvv85',
-            description: 'Docker Hub username/namespace (defaults to vaibhavvv85)'
-        )
-        string(
             name: 'DOCKERHUB_CREDENTIALS_ID',
             defaultValue: 'docker-hub-credentials',
-            description: 'Jenkins Credentials ID for Docker Hub (e.g. docker-hub-credentials or dockerhub-credentials)'
+            description: 'Jenkins Credentials ID for Docker Hub (Username with password)'
+        )
+        string(
+            name: 'DOCKERHUB_USERNAME',
+            defaultValue: '',
+            description: 'Optional override (leave blank to auto-fetch username from Jenkins credentials)'
         )
         booleanParam(
             name: 'PUSH_TO_DOCKERHUB',
             defaultValue: true,
-            description: 'Push image to Docker Hub (set to true to automatically publish vaibhavvv85/aws-voting)'
+            description: 'Push image to Docker Hub using Jenkins credentials'
         )
         booleanParam(
             name: 'DEPLOY_TO_K8S',
@@ -53,6 +53,7 @@ pipeline {
         RESOLVED_DOCKER_USER = ''
         TARGET_IMAGE         = 'aws-voting'
         CAN_PUSH             = 'false'
+        ACTIVE_CRED_ID       = ''
     }
 
     options {
@@ -76,28 +77,34 @@ pipeline {
 
                     def baseImage = (params.IMAGE_NAME ?: 'aws-voting').trim()
 
-                    // 1. Resolve Docker Hub User if parameter or credentials exist
-                    if (params.DOCKERHUB_USERNAME?.trim()) {
-                        env.RESOLVED_DOCKER_USER = params.DOCKERHUB_USERNAME.trim()
-                        echo "👤 Using Docker Hub username: '${env.RESOLVED_DOCKER_USER}'"
-                    } else if (params.PUSH_TO_DOCKERHUB == true) {
-                        def credList = [params.DOCKERHUB_CREDENTIALS_ID, 'docker-hub-credentials', 'dockerhub-credentials'].findAll { it }
+                    // 1. Resolve Docker Hub username directly from Jenkins credentials
+                    def credList = [params.DOCKERHUB_CREDENTIALS_ID, 'docker-hub-credentials', 'dockerhub-credentials'].findAll { it }.unique()
+                    
+                    if (params.PUSH_TO_DOCKERHUB == true || !params.DOCKERHUB_USERNAME?.trim()) {
                         for (cId in credList) {
                             try {
                                 withCredentials([usernamePassword(
                                     credentialsId: cId,
-                                    usernameVariable: 'AUTO_USER',
-                                    passwordVariable: 'AUTO_PASS'
+                                    usernameVariable: 'DH_USER',
+                                    passwordVariable: 'DH_PASS'
                                 )]) {
-                                    if (env.AUTO_USER?.trim()) {
-                                        env.RESOLVED_DOCKER_USER = env.AUTO_USER.trim()
-                                        echo "👤 Auto-detected Docker Hub username from credential '${cId}': '${env.RESOLVED_DOCKER_USER}'"
+                                    if (env.DH_USER?.trim()) {
+                                        env.RESOLVED_DOCKER_USER = env.DH_USER.trim()
+                                        env.ACTIVE_CRED_ID = cId
+                                        echo "🔑 Successfully fetched Docker Hub username '${env.RESOLVED_DOCKER_USER}' directly from Jenkins credential ID '${cId}'"
                                         break
                                     }
                                 }
-                            } catch (Exception ignored) {
+                            } catch (Exception e) {
+                                // Try next candidate
                             }
                         }
+                    }
+
+                    // Fallback to explicit parameter if specified and credential wasn't resolved
+                    if (!env.RESOLVED_DOCKER_USER && params.DOCKERHUB_USERNAME?.trim()) {
+                        env.RESOLVED_DOCKER_USER = params.DOCKERHUB_USERNAME.trim()
+                        echo "👤 Using Docker Hub username from build parameter: '${env.RESOLVED_DOCKER_USER}'"
                     }
 
                     // 2. Determine target image name
@@ -169,7 +176,7 @@ pipeline {
             steps {
                 echo "📤 Authenticating and pushing image to Docker Hub (${env.TARGET_IMAGE})..."
                 script {
-                    def candidateCreds = [params.DOCKERHUB_CREDENTIALS_ID, 'docker-hub-credentials', 'dockerhub-credentials'].findAll { it }.unique()
+                    def candidateCreds = [env.ACTIVE_CRED_ID, params.DOCKERHUB_CREDENTIALS_ID, 'docker-hub-credentials', 'dockerhub-credentials'].findAll { it }.unique()
                     boolean pushed = false
                     for (cId in candidateCreds) {
                         try {
