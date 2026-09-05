@@ -237,23 +237,26 @@ pipeline {
             }
         }
 
-        stage('Deploy Application (Docker Compose)') {
+        stage('Deploy Application (Docker)') {
             steps {
-                echo "🚀 Starting VoteSecure application and database stack on port 8085..."
-                sh '''
-                    # Ensure .env exists with port 8085 configured
-                    if [ ! -f .env ]; then
-                        cp .env.example .env 2>/dev/null || true
-                    fi
+                echo "🚀 Starting VoteSecure application on port 8085..."
+                sh """
+                    # Stop and remove existing container if already running
+                    docker stop votesecure-app 2>/dev/null || true
+                    docker rm votesecure-app 2>/dev/null || true
 
-                    # Start application and database containers
-                    docker compose up -d --remove-orphans || docker-compose up -d --remove-orphans || true
+                    # Launch self-contained VoteSecure container on port 8085
+                    docker run -d --name votesecure-app \\
+                        --restart unless-stopped \\
+                        -p 8085:80 \\
+                        -v votesecure_uploads:/var/www/html/uploads \\
+                        ${env.TARGET_IMAGE}:${env.IMAGE_TAG}
 
-                    echo "Waiting 5 seconds for containers to initialize..."
+                    echo "Waiting 5 seconds for container to initialize..."
                     sleep 5
                     echo "📊 Active containers:"
                     docker ps --filter "name=vote"
-                '''
+                """
                 echo "✅ VoteSecure stack is running on port 8085!"
             }
         }
