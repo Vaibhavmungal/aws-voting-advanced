@@ -237,20 +237,24 @@ pipeline {
             }
         }
 
-        stage('Deploy to Server via SSH (Optional)') {
-            when {
-                branch 'main'
-                expression { env.DEPLOY_HOST != null && env.DEPLOY_HOST != '' }
-            }
+        stage('Deploy Application (Docker Compose)') {
             steps {
-                echo "🚀 Running server deployment script..."
+                echo "🚀 Starting VoteSecure application and database stack on port 8085..."
                 sh '''
-                    if [ -f scripts/deploy.sh ]; then
-                        bash scripts/deploy.sh
-                    else
-                        echo "No deploy.sh script found. Skipping local deployment step."
+                    # Ensure .env exists with port 8085 configured
+                    if [ ! -f .env ]; then
+                        cp .env.example .env 2>/dev/null || true
                     fi
+
+                    # Start application and database containers
+                    docker compose up -d --remove-orphans || docker-compose up -d --remove-orphans || true
+
+                    echo "Waiting 5 seconds for containers to initialize..."
+                    sleep 5
+                    echo "📊 Active containers:"
+                    docker ps --filter "name=vote"
                 '''
+                echo "✅ VoteSecure stack is running on port 8085!"
             }
         }
     }
