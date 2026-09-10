@@ -25,19 +25,6 @@ stringData:
   DB_USER: "voting_user"
   DB_PASS: "change_me_production_secret"
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: votesecure-uploads-pvc
-  namespace: votesecure
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: gp2
-  resources:
-    requests:
-      storage: 5Gi
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -100,8 +87,7 @@ spec:
             timeoutSeconds: 3
       volumes:
         - name: uploads-volume
-          persistentVolumeClaim:
-            claimName: votesecure-uploads-pvc
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
