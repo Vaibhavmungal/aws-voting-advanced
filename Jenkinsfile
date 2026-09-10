@@ -48,12 +48,8 @@ pipeline {
         // Dynamic build tag based on Jenkins Build Number
         IMAGE_TAG            = "${BUILD_NUMBER}"
         APP_NAME             = 'VoteSecure'
-        
-        // Dynamically resolved from Jenkins Docker Hub credentials
-        RESOLVED_DOCKER_USER = ''
-        RESOLVED_CRED_ID     = ''
-        TARGET_IMAGE         = 'aws-voting'
-        CAN_PUSH             = 'false'
+        TARGET_IMAGE         = 'vaibhavvv85/aws-voting'
+        RESOLVED_CRED_ID     = 'docker-hub-credentials'
     }
 
     options {
@@ -181,7 +177,9 @@ pipeline {
 
         stage('Push to Docker Hub') {
             when {
-                expression { env.CAN_PUSH == 'true' }
+                expression {
+                    return (params.PUSH_TO_DOCKERHUB == null || "${params.PUSH_TO_DOCKERHUB}".toBoolean())
+                }
             }
             steps {
                 echo "📤 Authenticating and pushing image to Docker Hub (${env.TARGET_IMAGE})..."
@@ -223,7 +221,9 @@ pipeline {
 
         stage('Deploy to Kubernetes Pods') {
             when {
-                expression { params.DEPLOY_TO_K8S == true }
+                expression {
+                    return (params.DEPLOY_TO_K8S == null || "${params.DEPLOY_TO_K8S}".toBoolean())
+                }
             }
             steps {
                 echo "☸️ Initiating zero-downtime rolling deployment to Kubernetes pods..."
