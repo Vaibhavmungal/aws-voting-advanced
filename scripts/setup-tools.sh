@@ -19,7 +19,7 @@ sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-htt
 # 2. Install Docker Engine & Compose Plugin
 echo "🐳 Installing Docker & Docker Compose..."
 sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update -y
@@ -27,7 +27,10 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 
 # 3. Install Jenkins LTS
 echo "🏗️ Installing Jenkins LTS..."
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+sudo install -m 0755 -d /usr/share/keyrings
+sudo rm -f /usr/share/keyrings/jenkins-keyring.asc
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee -a /usr/share/keyrings/jenkins-keyring.asc > /dev/null
 echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 sudo apt-get update -y
 sudo apt-get install -y jenkins
@@ -49,7 +52,8 @@ rm -rf /tmp/aws /tmp/awscliv2.zip
 
 # 5. Install kubectl
 echo "☸️ Installing kubectl..."
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor --yes -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update -y
@@ -57,7 +61,7 @@ sudo apt-get install -y kubectl
 
 # 6. Install eksctl
 echo "🛠️ Installing eksctl..."
-curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+curl --silent --location "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
 sudo mv /tmp/eksctl /usr/local/bin/
 
 # 7. Install Trivy (Security Scanner)
