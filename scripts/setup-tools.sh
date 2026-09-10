@@ -11,10 +11,13 @@ echo "====================================================="
 
 export DEBIAN_FRONTEND=noninteractive
 
-# 1. Update and Base Dependencies
-echo "📦 Updating packages and installing prerequisites..."
+# 0. Clean any previously failed or partial jenkins repository entries to prevent apt deadlock
+sudo rm -f /etc/apt/sources.list.d/jenkins.list* /usr/share/keyrings/jenkins-keyring*
+
+# 1. Update and Base Dependencies (including Java 21 & Java 17)
+echo "📦 Updating packages and installing prerequisites (Java 21, Git, Unzip)..."
 sudo apt-get update -y
-sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https unzip git openjdk-17-jdk
+sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https unzip git fontconfig openjdk-21-jdk openjdk-17-jdk
 
 # 2. Install Docker Engine & Compose Plugin
 echo "🐳 Installing Docker & Docker Compose..."
@@ -28,9 +31,7 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 # 3. Install Jenkins LTS
 echo "🏗️ Installing Jenkins LTS..."
 sudo install -m 0755 -d /usr/share/keyrings
-sudo rm -f /usr/share/keyrings/jenkins-keyring.asc
 curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee -a /usr/share/keyrings/jenkins-keyring.asc > /dev/null
 echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 sudo apt-get update -y
 sudo apt-get install -y jenkins
