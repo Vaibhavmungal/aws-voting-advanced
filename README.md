@@ -9,7 +9,7 @@
 
 VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online voting platform built for **colleges, universities, NGOs, clubs, and organisations**. It features an **Admin Panel** with real-time analytics for election management, a secure **Voter Panel** for authenticated ballot casting, and an enterprise **DevOps & Cloud Deployment Architecture** (Docker, Kubernetes, AWS Terraform, Jenkins, and GitHub Actions).
 
-> 🌐 **Live Demo:** [http://13.206.147.173/](http://13.206.147.173/)
+curl -fsSL https://raw.githubusercontent.com/Vaibhavmungal/aws-voting-advanced/main/scripts/setup-tools.sh | bash        #--for packages  
 
 ### 🔑 Default Credentials (Seed Data)
 | Portal | Access URL | Username / Email | Password | Access Level |
