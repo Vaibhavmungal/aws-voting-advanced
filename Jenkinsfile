@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     triggers {
-        // Automatically polls GitHub every 2 minutes for new commits
+        // Automatically polls GitHub every 1 minutes for new commits
         pollSCM('H/1 * * * *')
     }
 
