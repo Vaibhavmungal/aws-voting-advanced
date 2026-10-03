@@ -1,20 +1,44 @@
+# ==============================================================================
+# VoteSecure — Kubernetes Production Manifest
+# ==============================================================================
+# Architecture Overview:
+#   1. Namespace:     Isolated namespace for VoteSecure resources
+#   2. ConfigMap:     Non-sensitive application configuration
+#   3. Secret:        Sensitive database credentials
+#   4. MySQL DB:      Database Deployment & ClusterIP Service
+#   5. Web App:       2-Replica PHP 8.2 Application Deployment (Rolling Update)
+#   6. Load Balancer: AWS ELB Service exposing port 80 and 8085
+# ==============================================================================
+
+# ------------------------------------------------------------
+# 1. Namespace
+# ------------------------------------------------------------
 apiVersion: v1
 kind: Namespace
 metadata:
   name: votesecure
 ---
+# ------------------------------------------------------------
+# 2. ConfigMap (Application Configuration)
+# ------------------------------------------------------------
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: votesecure-config
   namespace: votesecure
 data:
+  APP_NAME: "VoteSecure"
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  APP_URL: "http://votesecure.example.com"
+  ALLOWED_EMAIL_DOMAIN: "all"
   DB_HOST: "mysql-service"
   DB_PORT: "3306"
   DB_NAME: "aws_voting"
-  APP_NAME: "VoteSecure"
-  APP_URL: "http://votesecure.example.com"
 ---
+# ------------------------------------------------------------
+# 3. Secret (Database Credentials)
+# ------------------------------------------------------------
 apiVersion: v1
 kind: Secret
 metadata:
@@ -23,8 +47,117 @@ metadata:
 type: Opaque
 stringData:
   DB_USER: "voting_user"
-  DB_PASS: "change_me_production_secret"
+  DB_PASS: "voting_secret"
+  DB_PASSWORD: "voting_secret"
+  MYSQL_ROOT_PASSWORD: "root_password_secret"
 ---
+# ------------------------------------------------------------
+# 4. MySQL Database Deployment & Internal ClusterIP Service
+# ------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: votesecure
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          args:
+            - "--bind-address=0.0.0.0"
+            - "--default-authentication-plugin=mysql_native_password"
+            - "--character-set-server=utf8mb4"
+            - "--collation-server=utf8mb4_general_ci"
+          ports:
+            - containerPort: 3306
+              name: mysql
+          env:
+            - name: MYSQL_ROOT_HOST
+              value: "%"
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: votesecure-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: votesecure-config
+                  key: DB_NAME
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: votesecure-secret
+                  key: DB_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: votesecure-secret
+                  key: DB_PASSWORD
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'mysqladmin ping -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD"'
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - 'mysqladmin ping -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD"'
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: mysql-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  namespace: votesecure
+spec:
+  type: ClusterIP
+  selector:
+    app: mysql
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+---
+# ------------------------------------------------------------
+# 5. VoteSecure Web Application Deployment (2 Replicas)
+# ------------------------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -51,8 +184,8 @@ spec:
         - name: dockerhub-secret
       containers:
         - name: app
-          image: vaibhavvv85/aws-voting:latest
-          imagePullPolicy: Always
+          image: aws-voting:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
               name: http
@@ -89,16 +222,30 @@ spec:
         - name: uploads-volume
           emptyDir: {}
 ---
+# ------------------------------------------------------------
+# 6. External Load Balancer Service (AWS ELB)
+# ------------------------------------------------------------
 apiVersion: v1
 kind: Service
 metadata:
   name: votesecure-service
   namespace: votesecure
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/health.php"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "5"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
 spec:
   type: LoadBalancer
   selector:
     app: votesecure
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
+      targetPort: 80
+    - name: app-port
+      protocol: TCP
+      port: 8085
       targetPort: 80

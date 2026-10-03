@@ -52,10 +52,20 @@ resource "aws_security_group" "web" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Jenkins CI/CD Web Dashboard (strictly port 8080)
   ingress {
-    description = "Allow custom app port 8080"
+    description = "Allow Jenkins CI/CD dashboard on port 8080"
     from_port   = 8080
     to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # VoteSecure Web Application Alternate Port (port 8085)
+  ingress {
+    description = "Allow VoteSecure web application alternate port 8085"
+    from_port   = 8085
+    to_port     = 8085
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }

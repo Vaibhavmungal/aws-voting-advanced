@@ -40,17 +40,23 @@ $db_name = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'aws_voting');
 $db_port = (int)(getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? 3306));
 
 // Check DB connectivity non-blockingly
-$link = @mysqli_init();
-if ($link) {
-    @mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 3);
-    if (@mysqli_real_connect($link, $db_host, $db_user, $db_pass, $db_name, $db_port)) {
-        $response['database'] = 'connected';
-        mysqli_close($link);
-    } else {
-        $response['database'] = 'disconnected: ' . mysqli_connect_error();
-        // If DB is required, mark degraded. Still return HTTP 200 so web server container is considered healthy during boot
-        $response['status']   = 'degraded';
+try {
+    @mysqli_report(MYSQLI_REPORT_OFF);
+    $link = @mysqli_init();
+    if ($link) {
+        @mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 3);
+        if (@mysqli_real_connect($link, $db_host, $db_user, $db_pass, $db_name, $db_port)) {
+            $response['database'] = 'connected';
+            mysqli_close($link);
+        } else {
+            $response['database'] = 'disconnected: ' . mysqli_connect_error();
+            // If DB is required, mark degraded. Still return HTTP 200 so web server container is considered healthy during boot
+            $response['status']   = 'degraded';
+        }
     }
+} catch (Throwable $e) {
+    $response['database'] = 'disconnected: ' . $e->getMessage();
+    $response['status']   = 'degraded';
 }
 
 // HTTP 200 signals web container is alive; only return 503 if PHP engine is failing

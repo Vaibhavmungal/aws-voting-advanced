@@ -79,7 +79,39 @@ if [ "$TARGET_DB_HOST" = "localhost" ] || [ "$TARGET_DB_HOST" = "127.0.0.1" ]; t
         echo "ℹ️ Database already initialized, skipping import."
     fi
 else
-    echo "🌐 External database configured (host: $TARGET_DB_HOST). Skipping embedded MySQL."
+    echo "🌐 External database configured (host: $TARGET_DB_HOST)."
+    echo "⏳ Verifying connectivity to remote MySQL database $TARGET_DB_HOST..."
+
+    REMOTE_USER="${DB_USER:-voting_user}"
+    REMOTE_PASS="${DB_PASS:-${DB_PASSWORD:-voting_secret}}"
+    REMOTE_DB="${DB_NAME:-aws_voting}"
+    REMOTE_PORT="${DB_PORT:-3306}"
+
+    MAX_TRIES=30
+    TRIES=0
+    until mysql -h "$TARGET_DB_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASS" -e "SELECT 1;" >/dev/null 2>&1 || [ $TRIES -ge $MAX_TRIES ]; do
+        sleep 1
+        TRIES=$((TRIES + 1))
+        if [ $((TRIES % 5)) -eq 0 ]; then
+            echo "Waiting for remote MySQL database $TARGET_DB_HOST:$REMOTE_PORT ($TRIES/$MAX_TRIES)..."
+        fi
+    done
+
+    if [ $TRIES -ge $MAX_TRIES ]; then
+        echo "⚠️ Warning: Remote database not ready after $MAX_TRIES seconds. Continuing startup..."
+    else
+        echo "✅ Connected to remote MySQL database $TARGET_DB_HOST successfully!"
+        if [ -f /var/www/html/database/aws_voting.sql ]; then
+            TABLE_COUNT=$(mysql -h "$TARGET_DB_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASS" -D "$REMOTE_DB" -sse "SELECT count(*) FROM information_schema.tables WHERE table_schema='$REMOTE_DB';" 2>/dev/null || echo "0")
+            if [ "$TABLE_COUNT" = "0" ] || [ -z "$TABLE_COUNT" ]; then
+                echo "📥 Database '$REMOTE_DB' is empty. Initializing schema from database/aws_voting.sql..."
+                mysql -h "$TARGET_DB_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASS" -D "$REMOTE_DB" < /var/www/html/database/aws_voting.sql 2>/dev/null || true
+                echo "✅ Database schema initialized successfully!"
+            else
+                echo "ℹ️ Database '$REMOTE_DB' already contains $TABLE_COUNT tables. Skipping schema import."
+            fi
+        fi
+    fi
 fi
 
 mkdir -p /var/www/html/uploads

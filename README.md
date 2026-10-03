@@ -9,14 +9,23 @@
 
 VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online voting platform built for **colleges, universities, NGOs, clubs, and organisations**. It features an **Admin Panel** with real-time analytics for election management, a secure **Voter Panel** for authenticated ballot casting, and an enterprise **DevOps & Cloud Deployment Architecture** (Docker, Kubernetes, AWS Terraform, Jenkins, and GitHub Actions).
 
-curl -fsSL https://raw.githubusercontent.com/Vaibhavmungal/aws-voting-advanced/main/scripts/setup-tools.sh | bash        #--for packages  
+> 🌐 **Live Demo:** [http://13.206.147.173/](http://13.206.147.173/)  
+> 🚀 **All-in-One EC2 Tool Installer:**
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/Vaibhavmungal/aws-voting-advanced/main/scripts/setup-tools.sh | bash
+> ```
 
-### 🔑 Default Credentials (Seed Data)
-| Portal | Access URL | Username / Email | Password | Access Level |
+### 🔑 Default Credentials & Service Port Allocation
+| Service / Portal | Port | Access URL / Command | Default Credentials | Purpose |
 |---|---|---|---|---|
-| **Admin Panel** | `/admin/login.php` | `Vaibhav` | `1234` | Full Election, Candidate & Voter Management |
-| **Voter Portal** | `/voter/login.php` | *(Register any account or use seeded accounts)* | *(set at signup)* | Ballot Casting |
-| **phpMyAdmin** *(Docker)* | `http://localhost:8081` | `voting_user` | `voting_secret` | Web Database GUI |
+| **VoteSecure Web App (Production)** | `80` | `http://<domain-or-ip>/` | — | External user access via AWS LoadBalancer / ALB |
+| **VoteSecure Web App (Local)** | `8085` | `http://localhost:8085/` | — | Local access via port-forward or Docker Compose |
+| **Admin Panel** | `80` / `8085` | `/admin/login.php` | `Vaibhav` / `1234` | Full Election, Candidate & Voter Management |
+| **Voter Portal** | `80` / `8085` | `/voter/login.php` | *(Register or use seed voters)* | Ballot Casting |
+| **Jenkins CI/CD Dashboard** | `8080` | `http://<ec2-ip>:8080` | *(Stored in initialAdminPassword)* | Automated Build, Trivy scan & EKS deployment |
+| **MySQL Server** | `3306` | Internal Service | `voting_user` / `voting_secret` | Internal database (ClusterIP / Container network) |
+| **phpMyAdmin** *(Docker Compose)* | `8081` | `http://localhost:8081` | `voting_user` / `voting_secret` | Web Database GUI |
+| **Bastion Jump Host (SSH)** | `22` | `ssh -i key.pem ubuntu@<ip>` | SSH Key | Secure administrative access to private subnets |
 
 ---
 
@@ -348,8 +357,96 @@ VoteSecure connects administrators, voters, database engines, and automated DevO
    - Builds optimized multi-stage Docker image from `Dockerfile`.
    - Runs vulnerability scan with Trivy for CVE mitigation.
 3. **Continuous Delivery & Zero-Downtime Rollout**:
-   - **Kubernetes**: Deploys via `scripts/deploy-k8s.sh` using rolling updates (`maxSurge: 1, maxUnavailable: 0`). A new container pod spins up, passes the `/health.php` readiness probe, and only then is the old pod retired.
+   - **Kubernetes / Amazon EKS**: Deploys via `k8s/votesecure.yaml` or `scripts/deploy-k8s.sh` using rolling updates (`maxSurge: 1, maxUnavailable: 0`). A new container pod spins up, passes the `/health.php` readiness probe, and only then is the old pod retired.
    - **AWS Cloud**: Terraform provisions high-availability multi-tier infrastructure (custom VPC, private subnets, Bastion host, EC2 compute, and RDS MySQL) with automated Docker bootstrap.
+
+---
+
+## ☸️ Kubernetes (k8s) & Amazon EKS Architecture & Deployment
+
+VoteSecure features a production-ready, clean, and self-contained Kubernetes manifest ([`k8s/votesecure.yaml`](k8s/votesecure.yaml)) engineered specifically for zero-downtime rolling updates, high availability, and easy viva/interview explanations.
+
+### 📐 Architecture Overview (6 Core Components)
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Namespace: votesecure                           │
+│                                                                        │
+│   ┌───────────────────┐    ┌─────────────────┐                         │
+│   │ ConfigMap: config │    │ Secret: secret  │                         │
+│   └─────────┬─────────┘    └────────┬────────┘                         │
+│             │                       │                                  │
+│             ▼                       ▼                                  │
+│   ┌──────────────────────────────────────────┐                         │
+│   │ MySQL Deployment (Single replica, 3306)  │                         │
+│   │ └─ ClusterIP Service: mysql-service      │                         │
+│   └───────────────────▲──────────────────────┘                         │
+│                       │ internal DNS                                   │
+│   ┌───────────────────┴──────────────────────┐                         │
+│   │ App Deployment (2 Replicas, RollingUpdate│◀── Readiness Probe      │
+│   │ Probes: /health.php                      │    (/health.php)        │
+│   └───────────────────▲──────────────────────┘                         │
+│                       │                                                │
+│   ┌───────────────────┴──────────────────────┐                         │
+│   │ LoadBalancer Service: votesecure-service │◀── Traffic Entrypoint   │
+│   │ Ports: 80 (HTTP), 8085 (App)             │    (AWS ELB)            │
+│   └──────────────────────────────────────────┘                         │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Namespace (`votesecure`)**: Isolates all VoteSecure workloads from default/kube-system pods.
+2. **ConfigMap (`votesecure-config`)**: Decouples application configuration (`DB_HOST: "mysql-service"`, `DB_NAME`, `APP_ENV: "production"`, `ALLOWED_EMAIL_DOMAIN: "all"`).
+3. **Secret (`votesecure-secret`)**: Safely stores sensitive credentials (`DB_USER`, `DB_PASS`, `MYSQL_ROOT_PASSWORD`).
+4. **MySQL Database Deployment (`mysql` & `mysql-service`)**:
+   - Single replica with `strategy: Recreate` to eliminate concurrent write disk corruption.
+   - Internal `ClusterIP` on port 3306 (strictly private inside the cluster).
+   - Liveness & readiness probes via `mysqladmin ping`.
+5. **VoteSecure App Deployment (`votesecure-app`)**:
+   - 2 replicas with `strategy: RollingUpdate` (`maxSurge: 1, maxUnavailable: 0`) for **zero-downtime updates**.
+   - Container probes query `/health.php` before routing traffic.
+   - Resource requests and limits (CPU: 100m–500m, Memory: 128Mi–512Mi).
+6. **External Service (`votesecure-service`)**:
+   - Type `LoadBalancer` (automatically provisions an AWS Elastic Load Balancer on Amazon EKS).
+   - Exposes Port 80 (standard HTTP) and Port 8085 (app alternate port), keeping port 8080 free for Jenkins.
+   - AWS healthcheck annotations configured for `/health.php`.
+
+### 🧪 1. Local Kubernetes Testing (Docker Desktop / Minikube / Kind)
+
+```bash
+# 1. Apply the manifest
+kubectl apply -f k8s/votesecure.yaml
+
+# 2. Confirm database pod is healthy
+kubectl rollout status deployment/mysql -n votesecure --timeout=120s
+
+# 3. Confirm web application pods are healthy (zero-downtime)
+kubectl rollout status deployment/votesecure-app -n votesecure --timeout=180s
+
+# 4. View running pods
+kubectl get pods -n votesecure -o wide
+
+# 5. Access locally on port 8085 (leaving port 8080 free for Jenkins)
+kubectl port-forward -n votesecure svc/votesecure-service 8085:80
+```
+Open in browser:
+- Homepage: `http://localhost:8085/`
+- Health probe: `http://localhost:8085/health.php`
+- Admin Login: `http://localhost:8085/admin/login.php` (`Vaibhav` / `1234`)
+
+### ☁️ 2. Amazon EKS Deployment via Automated Script
+
+```bash
+# Deploy with automatic EKS cluster connection and zero-downtime rollout:
+./scripts/deploy-k8s.sh aws-voting:latest votesecure <your-eks-cluster-name> <aws-region>
+
+# Example:
+./scripts/deploy-k8s.sh aws-voting:latest votesecure my-eks-cluster ap-south-1
+```
+
+### 🏗️ 3. Amazon EKS Deployment via Jenkins Pipeline
+
+1. In Jenkins, open the **votesecure-pipeline** job and click **Build Now** (or push a commit to trigger it automatically).
+2. Jenkins compiles, validates PHP syntax, builds the Docker image, scans with Trivy, pushes to Docker Hub, connects to your Kubernetes/EKS cluster, performs a zero-downtime rolling update, and outputs the live AWS Load Balancer URL!
 
 ---
 
@@ -509,21 +606,20 @@ The pipeline dynamically reads your Docker Hub credentials without hardcoding an
 ##### Step 4: Create the VoteSecure Pipeline Job
 1. From the Jenkins Dashboard, click **New Item**.
 2. Enter Item Name: `votesecure-pipeline` and choose **Pipeline**, then click **OK**.
-3. Under the **General** tab, check **This project is parameterized** (The pipeline will auto-detect parameters from `Jenkinsfile` on first run).
-4. Scroll down to the **Pipeline** section:
+3. Scroll down to the **Pipeline** section:
    - **Definition**: Select **Pipeline script from SCM**.
    - **SCM**: Select **Git**.
    - **Repository URL**: `https://github.com/Vaibhavmungal/aws-voting-advanced.git` (or your forked repository URL).
    - **Branch Specifier**: `*/main`.
    - **Script Path**: `Jenkinsfile`.
-5. Click **Save**.
+4. Click **Save**.
 
 ---
 
-##### Step 5: (Optional) Configure Webhook for Automated Trigger on Git Push
+##### Step 5: (Optional) Configure Webhook or SCM Polling for Automated Trigger
 1. In your Jenkins Job configuration, under **Build Triggers**, check:
    - **GitHub hook trigger for GITScm polling** OR
-   - **Poll SCM** (Schedule: `H/5 * * * *` to check every 5 minutes).
+   - **Poll SCM** (The pipeline polls every 2 minutes automatically: `H/2 * * * *`).
 2. On GitHub (**Repository > Settings > Webhooks > Add Webhook**):
    - **Payload URL**: `http://<your-ec2-ip>:8080/github-webhook/`
    - **Content type**: `application/json`
@@ -531,30 +627,26 @@ The pipeline dynamically reads your Docker Hub credentials without hardcoding an
 
 ---
 
-##### Step 6: Execute the Pipeline ("Build with Parameters")
-1. Click **Build with Parameters** in the left sidebar.
-2. Review/customize the build parameters:
-   | Parameter | Default | Purpose |
-   |---|---|---|
-   | `IMAGE_NAME` | `aws-voting` | Container image name (built from Dockerfile) |
-   | `DOCKERHUB_USERNAME` | *(blank)* | Auto-detected from Jenkins credentials, or override with your username |
-   | `DOCKERHUB_CREDENTIALS_ID` | `dockerhub-credentials` | Jenkins credentials ID for Docker Hub |
-   | `PUSH_TO_DOCKERHUB` | `false` | Check `true` to push tagged image to Docker Hub |
-   | `DEPLOY_TO_K8S` | `true` | Deploy image directly to Kubernetes pods |
-   | `K8S_NAMESPACE` | `votesecure` | Target Kubernetes namespace |
-3. Click **Build**.
+##### Step 6: Execute the Pipeline ("Build Now")
+1. Click **Build Now** in the left sidebar (or push code to GitHub to trigger automatically).
+2. The pipeline executes without manual inputs, pulling environment configurations directly from `Jenkinsfile`.
 
 ---
 
 ##### Step 7: Automated Execution & Verification
 Watch the live pipeline execution stages:
 1. **📥 Checkout Code**: Clones the latest commit from Git.
-2. **⚙️ Resolve Configuration**: Resolves image names without hardcoded usernames.
-3. **🔍 Lint & PHP Syntax Check**: Validates syntax across all PHP files via `php -l`.
-4. **🐳 Build Docker Image**: Multi-stage compilation creates `aws-voting:${BUILD_NUMBER}` and `aws-voting:latest`.
-5. **🛡️ Security Scan (Trivy)**: Scans container image for vulnerabilities.
-6. **📤 Push to Docker Hub** *(If enabled)*: Authenticates and publishes images.
-7. **☸️ Deploy to Kubernetes Pods**: Executes rolling update (`kubectl set image deployment/votesecure-app app=aws-voting:${BUILD_NUMBER} -n votesecure`) and monitors rollout completion with zero downtime (`maxSurge: 1, maxUnavailable: 0`).
+2. **🔍 PHP Syntax Check**: Validates syntax across all PHP scripts via `php -l`.
+3. **🐳 Build Docker Image**: Multi-stage compilation creates default `aws-voting:${BUILD_NUMBER}` and `latest`.
+4. **🛡️ Security Scan (Trivy)**: Scans container image for vulnerabilities and publishes reports.
+5. **📤 Push to Docker Hub**: Uses default Jenkins credentials (`docker-hub-credentials`) to tag and push to Docker Hub registry.
+6. **☸️ Deploy to Kubernetes Pods**:
+   - If `EKS_CLUSTER_NAME` is configured, automatically executes `aws eks update-kubeconfig`.
+   - Ensures namespace and base manifests (`k8s/votesecure.yaml`) are applied.
+   - Waits for MySQL database deployment to become ready (`kubectl rollout status deployment/mysql`).
+   - Executes zero-downtime rolling update on app deployment (`kubectl set image deployment/votesecure-app app=aws-voting:${BUILD_NUMBER} -n votesecure`).
+   - Monitors rollout completion with zero downtime (`maxSurge: 1, maxUnavailable: 0`).
+   - Retrieves live LoadBalancer ingress URL / hostname from the cluster.
 
 ---
 
@@ -666,6 +758,7 @@ aws-voting-advanced/
 │   └── votesecure.yaml         # Complete k8s deployment, service, configmap & secrets
 │
 ├── scripts/                    # Deployment automation scripts
+│   ├── setup-tools.sh          # All-in-one EC2 installer (Docker, Jenkins, K8s, Terraform)
 │   ├── deploy.sh               # EC2 / VPS production container pull & rollout
 │   └── deploy-k8s.sh           # Kubernetes zero-downtime rolling update script
 │

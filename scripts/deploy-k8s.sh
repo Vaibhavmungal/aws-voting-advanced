@@ -16,13 +16,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST_FILE="${SCRIPT_DIR}/k8s/votesecure.yaml"
 
 # Default arguments
-IMAGE="${1:-vaibhavvv85/aws-voting:latest}"
+IMAGE="${1:-aws-voting:latest}"
 NAMESPACE="${2:-votesecure}"
+EKS_CLUSTER="${3:-}"
+AWS_REGION="${4:-ap-south-1}"
 
 echo "====================================================="
 echo "☸️  VoteSecure Kubernetes Deployment: $(date)"
 echo "📦 Target Container Image: ${IMAGE}"
 echo "🏷️  Target Namespace:       ${NAMESPACE}"
+if [ -n "${EKS_CLUSTER}" ]; then
+echo "☁️  Target AWS EKS Cluster: ${EKS_CLUSTER} (${AWS_REGION})"
+fi
 echo "📄 Manifest File:          ${MANIFEST_FILE}"
 echo "====================================================="
 
@@ -32,6 +37,11 @@ command -v kubectl >/dev/null 2>&1 || {
     echo "Please install kubectl: https://kubernetes.io/docs/tasks/tools/" >&2
     exit 1
 }
+
+if [ -n "${EKS_CLUSTER}" ] && command -v aws >/dev/null 2>&1; then
+    echo "☁️ Updating kubeconfig for EKS cluster '${EKS_CLUSTER}' in '${AWS_REGION}'..."
+    aws eks update-kubeconfig --region "${AWS_REGION}" --name "${EKS_CLUSTER}" || true
+fi
 
 echo "🔍 Verifying Kubernetes cluster connectivity..."
 if ! kubectl cluster-info >/dev/null 2>&1; then
@@ -55,26 +65,30 @@ kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply
 echo "📄 Applying base Kubernetes configurations and services..."
 kubectl apply -f "${MANIFEST_FILE}" -n "${NAMESPACE}"
 
-# 5. Perform rolling update with the specified image
+# 5. Ensure MySQL database is healthy
+echo "⏳ Waiting for MySQL database rollout (timeout: 120s)..."
+kubectl rollout status deployment/mysql -n "${NAMESPACE}" --timeout=120s || true
+
+# 6. Perform rolling update with the specified image
 echo "🔄 Updating deployment 'votesecure-app' to image: ${IMAGE}..."
 kubectl set image deployment/votesecure-app app="${IMAGE}" -n "${NAMESPACE}"
 
-# 6. Wait for rollout to complete (zero-downtime)
+# 7. Wait for rollout to complete (zero-downtime)
 echo "⏳ Waiting for rolling update rollout to finish (timeout: 180s)..."
 if kubectl rollout status deployment/votesecure-app -n "${NAMESPACE}" --timeout=180s; then
     echo "✅ Rolling update finished successfully!"
 else
     echo "⚠️ Rollout did not complete within timeout. Current pod status:"
-    kubectl get pods -n "${NAMESPACE}" -l app=votesecure
+    kubectl get pods -n "${NAMESPACE}" -o wide
     exit 1
 fi
 
-# 7. Display active pods and endpoints
+# 8. Display active pods and endpoints
 echo ""
 echo "====================================================="
 echo "📊 Current Pods in '${NAMESPACE}':"
 echo "====================================================="
-kubectl get pods -n "${NAMESPACE}" -l app=votesecure -o wide
+kubectl get pods -n "${NAMESPACE}" -o wide
 
 echo ""
 echo "====================================================="
