@@ -3,7 +3,7 @@ pipeline {
 
     triggers {
         // Automatically polls GitHub every 2 minutes for new commits
-        pollSCM('H/2 * * * *')
+        pollSCM('H/1 * * * *')
     }
 
     environment {
