@@ -9,11 +9,7 @@
 
 VoteSecure is a modern, secure, responsive, and **open-source** PHP-based online voting platform built for **colleges, universities, NGOs, clubs, and organisations**. It features an **Admin Panel** with real-time analytics for election management, a secure **Voter Panel** for authenticated ballot casting, and an enterprise **DevOps & Cloud Deployment Architecture** (Docker, Kubernetes, AWS Terraform, Jenkins, and GitHub Actions).
 
-> 🌐 **Live Demo:** [http://13.206.147.173/](http://13.206.147.173/)  
-> 🚀 **All-in-One EC2 Tool Installer:**
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/Vaibhavmungal/aws-voting-advanced/main/scripts/setup-tools.sh | bash
-> ```
+> 🌐 **Live Demo:** [http:
 
 ### 🔑 Default Credentials & Service Port Allocation
 | Service / Portal | Port | Access URL / Command | Default Credentials | Purpose |
@@ -58,6 +54,12 @@ Below are the recommended and minimum supported versions along with official dir
 ## 📥 Prerequisites & Service Installation (AWS EC2 / Ubuntu 24.04 LTS)
 
 > All cloud infrastructure and CI/CD platforms — **AWS EC2**, **Docker**, **Jenkins**, and **Kubernetes** — run on **Linux (Ubuntu 24.04 LTS)**. Use these copy-paste commands to set up your AWS EC2 instance from scratch.
+
+
+> 🚀 **All-in-One EC2 Tool Installer:**
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/Vaibhavmungal/aws-voting-advanced/main/scripts/setup-tools.sh | bash
+> ```
 
 ---
 
