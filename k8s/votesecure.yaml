@@ -184,8 +184,8 @@ spec:
         - name: dockerhub-secret
       containers:
         - name: app
-          image: aws-voting:latest
-          imagePullPolicy: IfNotPresent
+          image: vaibhavvv85/aws-voting:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
               name: http
@@ -237,7 +237,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: votesecure
   ports:
@@ -245,7 +245,9 @@ spec:
       protocol: TCP
       port: 80
       targetPort: 80
+      nodePort: 31760
     - name: app-port
       protocol: TCP
       port: 8085
       targetPort: 80
+      nodePort: 31847
