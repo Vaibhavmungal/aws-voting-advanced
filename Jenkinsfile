@@ -11,7 +11,7 @@ pipeline {
         IMAGE_NAME        = 'aws-voting'
         IMAGE_TAG         = "${BUILD_NUMBER}"
         K8S_NAMESPACE     = 'votesecure'
-        EKS_CLUSTER_NAME  = 'project'
+        EKS_CLUSTER_NAME  = ''
         AWS_REGION        = 'us-east-1'
     }
 

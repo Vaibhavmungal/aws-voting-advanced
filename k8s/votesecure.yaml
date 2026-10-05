@@ -184,8 +184,8 @@ spec:
         - name: dockerhub-secret
       containers:
         - name: app
-          image: vaibhavv85/aws-voting:latest
-          imagePullPolicy: Always
+          image: aws-voting:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
               name: http
