@@ -72,7 +72,7 @@ pipeline {
             steps {
                 echo "📤 Authenticating with default credentials and pushing to Docker Hub..."
                 script {
-                    def credIds = ['docker-hub-credentials', 'dockerhub-credentials']
+                    def credIds = ['docker', 'docker-hub-credentials', 'dockerhub-credentials']
                     boolean pushed = false
                     for (cId in credIds) {
                         if (!pushed) {
